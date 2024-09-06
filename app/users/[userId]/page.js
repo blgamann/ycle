@@ -18,6 +18,7 @@ export default function UserDetail({ params }) {
   const fetchUserData = async () => {
     try {
       const response = await fetch(`/api/users/${userId}`);
+      console.log(response);
       if (response.ok) {
         const data = await response.json();
         setUserData(data);
@@ -50,6 +51,9 @@ export default function UserDetail({ params }) {
   };
 
   if (!userData) return <div>Loading...</div>;
+
+  console.log(`userData: ${userData}`);
+  console.log(`userData.user: ${userData.user}`);
 
   return (
     <div className="max-w-2xl mx-auto p-4">

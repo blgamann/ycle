@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import supabase from '../../../../../lib/db';
 
 // 링크를 감지하고 변환하는 함수
 const convertLinksToAnchors = (text) => {
@@ -41,32 +42,39 @@ export default function CycleDetail({ params }) {
 
   const fetchCycleData = async () => {
     try {
-      const response = await fetch(`/api/users/${userId}/cycles/${cycleId}`);
-      if (response.ok) {
-        const data = await response.json();
+      const { data, error } = await supabase
+        .from('cycles')
+        .select('*')
+        .eq('id', cycleId)
+        .eq('user_id', userId)
+        .single()
+
+      if (error) throw error
+
+      if (data) {
         setCycleData(data);
         setReflection(data.reflection || "");
       } else {
-        console.error("Failed to fetch cycle data");
+        console.error('Cycle not found');
       }
     } catch (error) {
-      console.error("Error fetching cycle data:", error);
+      console.error('Error fetching cycle data:', error);
     }
   };
 
   const fetchComments = async () => {
     try {
-      const response = await fetch(
-        `/api/users/${userId}/cycles/${cycleId}/comments`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setComments(data);
-      } else {
-        console.error("Failed to fetch comments");
-      }
+      const { data, error } = await supabase
+        .from('comments')
+        .select('*, users(username)')
+        .eq('cycle_id', cycleId)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      setComments(data);
     } catch (error) {
-      console.error("Error fetching comments:", error);
+      console.error('Error fetching comments:', error);
     }
   };
 
@@ -75,26 +83,18 @@ export default function CycleDetail({ params }) {
     if (!newComment.trim()) return;
 
     try {
-      const response = await fetch(
-        `/api/users/${userId}/cycles/${cycleId}/comments`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ userId, content: newComment }),
-        }
-      );
+      const { data, error } = await supabase
+        .from('comments')
+        .insert({ cycle_id: cycleId, user_id: userId, content: newComment })
+        .select('*, users(username)')
+        .single()
 
-      if (response.ok) {
-        const addedComment = await response.json();
-        setComments([addedComment, ...comments]);
-        setNewComment("");
-      } else {
-        console.error("Failed to add comment");
-      }
+      if (error) throw error
+
+      setComments([data, ...comments]);
+      setNewComment('');
     } catch (error) {
-      console.error("Error adding comment:", error);
+      console.error('Error adding comment:', error);
     }
   };
 
@@ -158,7 +158,7 @@ export default function CycleDetail({ params }) {
                 onChange={(e) => setReflection(e.target.value)}
                 className="w-full p-2 border rounded mb-2"
                 rows="4"
-                placeholder="회고를 작성하세요..."
+                placeholder="회고를 작성하세��..."
               />
               <div className="flex justify-end">
                 <button

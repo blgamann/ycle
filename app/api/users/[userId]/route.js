@@ -1,20 +1,46 @@
 import { NextResponse } from "next/server";
-import db from "../../../lib/db";
+import supabase from "../../../lib/db";
 
 export async function GET(request, { params }) {
   const { userId } = params;
 
-  const user = db
-    .prepare("SELECT id, username, why, medium FROM users WHERE id = ?")
-    .get(userId);
+  try {
+    const { data, error } = await supabase
+      .from("cycles")
+      .select("*")
+      .eq("user_id", userId);
 
-  if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
+    if (error) throw error;
+
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Error fetching cycles:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
+}
 
-  const cycles = db
-    .prepare("SELECT * FROM cycles WHERE user_id = ? ORDER BY date DESC")
-    .all(userId);
+export async function POST(request, { params }) {
+  const { userId } = params;
+  const cycleData = await request.json();
 
-  return NextResponse.json({ user, cycles });
+  try {
+    const { data, error } = await supabase
+      .from("cycles")
+      .insert({ ...cycleData, user_id: userId })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json(data, { status: 201 });
+  } catch (error) {
+    console.error("Error creating cycle:", error);
+    return NextResponse.json(
+      { error: "Failed to create cycle" },
+      { status: 500 }
+    );
+  }
 }
