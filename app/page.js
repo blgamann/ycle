@@ -113,6 +113,7 @@ export default function Home() {
     setSelectedMedium(""); // Add this line
     setUsername(""); // Add this line
     setPassword(""); // Add this line
+    setSelectedUser("전체"); // Add this line
     localStorage.removeItem("user");
   }
 
