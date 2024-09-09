@@ -256,7 +256,7 @@ export default function Home() {
                 </span>
                 <div className="flex-grow">
                   <p className="text-lg text-gray-700">
-                    오늘의 배움이 있으셨나요?
+                    오늘은 어떤 배움이 있으셨나요?
                   </p>
                 </div>
               </div>
