@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "../lib/supabase";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Jazzicon from "react-jazzicon";
-import { UserAvatar } from './UserAvatar';
 
 // Add this function outside of the component
 function hashCode(str) {
@@ -24,27 +23,6 @@ function hashCode(str) {
     hash = hash & hash; // Convert to 32bit integer
   }
   return Math.abs(hash);
-}
-
-// Move this function outside of the component if it's not already
-function createLinksInText(text) {
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  return text.split(urlRegex).map((part, index) => {
-    if (part.match(urlRegex)) {
-      return (
-        <a
-          key={index}
-          href={part}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:underline"
-        >
-          {part}
-        </a>
-      );
-    }
-    return part;
-  });
 }
 
 export function CycleCard({ cycle, currentUser }) {
@@ -116,7 +94,9 @@ export function CycleCard({ cycle, currentUser }) {
       <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <UserAvatar username={username} size={48} />
+            <div className="w-12 h-12">
+              <Jazzicon diameter={48} seed={seed} />
+            </div>
             <div>
               <CardTitle className="text-xl">{username}</CardTitle>
               <p className="text-sm text-gray-500">
@@ -134,23 +114,21 @@ export function CycleCard({ cycle, currentUser }) {
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm sm:text-base text-gray-700 mb-4">
-          {createLinksInText(cycle.reflection)}
+        <p className="text-lg text-gray-700 mb-4 whitespace-pre-wrap">
+          {cycle.reflection}
         </p>
         <div className="mt-6 space-y-4">
           {comments.map((comment) => (
             <div key={comment.id} className="bg-gray-50 p-3 rounded-lg">
               <div className="flex items-center space-x-2 mb-1">
-                <span className="font-semibold text-sm sm:text-base">
+                <span className="font-semibold text-base">
                   {comment.users.username}
                 </span>
-                <span className="text-xs sm:text-sm text-gray-500">
+                <span className="text-sm text-gray-500">
                   {formatDate(comment.created_at)}
                 </span>
               </div>
-              <p className="text-sm sm:text-base text-gray-700">
-                {createLinksInText(comment.content)}
-              </p>
+              <p className="text-base text-gray-700">{comment.content}</p>
             </div>
           ))}
         </div>
