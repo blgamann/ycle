@@ -26,6 +26,27 @@ function hashCode(str) {
   return Math.abs(hash);
 }
 
+// Move this function outside of the component if it's not already
+function createLinksInText(text) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  return text.split(urlRegex).map((part, index) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:underline"
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+}
+
 export function CycleCard({ cycle, currentUser }) {
   const [newComment, setNewComment] = useState("");
   const [isCommenting, setIsCommenting] = useState(false);
@@ -113,19 +134,23 @@ export function CycleCard({ cycle, currentUser }) {
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-lg text-gray-700 mb-4">{cycle.reflection}</p>
+        <p className="text-sm sm:text-base text-gray-700 mb-4">
+          {createLinksInText(cycle.reflection)}
+        </p>
         <div className="mt-6 space-y-4">
           {comments.map((comment) => (
             <div key={comment.id} className="bg-gray-50 p-3 rounded-lg">
               <div className="flex items-center space-x-2 mb-1">
-                <span className="font-semibold text-base">
+                <span className="font-semibold text-sm sm:text-base">
                   {comment.users.username}
                 </span>
-                <span className="text-sm text-gray-500">
+                <span className="text-xs sm:text-sm text-gray-500">
                   {formatDate(comment.created_at)}
                 </span>
               </div>
-              <p className="text-base text-gray-700">{comment.content}</p>
+              <p className="text-sm sm:text-base text-gray-700">
+                {createLinksInText(comment.content)}
+              </p>
             </div>
           ))}
         </div>
