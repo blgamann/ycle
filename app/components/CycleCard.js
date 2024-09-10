@@ -10,9 +10,11 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "../lib/supabase";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Jazzicon from "react-jazzicon";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { MoreVertical, Edit, Trash } from "lucide-react";
 
 // Add this function outside of the component
 function hashCode(str) {
@@ -25,10 +27,14 @@ function hashCode(str) {
   return Math.abs(hash);
 }
 
-export function CycleCard({ cycle, currentUser }) {
+export function CycleCard({ cycle, currentUser, onDelete }) {
   const [newComment, setNewComment] = useState("");
   const [isCommenting, setIsCommenting] = useState(false);
   const [comments, setComments] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedReflection, setEditedReflection] = useState(cycle.reflection);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editedCommentContent, setEditedCommentContent] = useState("");
 
   useEffect(() => {
     fetchComments();
@@ -85,6 +91,69 @@ export function CycleCard({ cycle, currentUser }) {
     }
   }
 
+  async function handleEditSubmit() {
+    const { data, error } = await supabase
+      .from("cycles")
+      .update({ reflection: editedReflection })
+      .eq("id", cycle.id);
+
+    if (error) {
+      console.error("Error updating reflection:", error);
+      alert("수정 중 오류가 발생했습니다.");
+    } else {
+      setIsEditing(false);
+      // Update the local state to reflect the change
+      cycle.reflection = editedReflection;
+    }
+  }
+
+  async function handleDelete() {
+    if (window.confirm("정말로 이 사이클을 삭제하시겠습니까?")) {
+      const { error } = await supabase
+        .from("cycles")
+        .delete()
+        .eq("id", cycle.id);
+
+      if (error) {
+        console.error("Error deleting cycle:", error);
+        alert("삭제 중 오류가 발생했습니다.");
+      } else {
+        onDelete(cycle.id); // Call the onDelete function passed as prop
+      }
+    }
+  }
+
+  async function handleCommentEdit(commentId, newContent) {
+    const { data, error } = await supabase
+      .from("comments")
+      .update({ content: newContent })
+      .eq("id", commentId);
+
+    if (error) {
+      console.error("Error updating comment:", error);
+      alert("댓글 수정 중 오류가 발생했습니다.");
+    } else {
+      setEditingCommentId(null);
+      fetchComments(); // Refresh comments after editing
+    }
+  }
+
+  async function handleCommentDelete(commentId) {
+    if (window.confirm("정말로 이 댓글을 삭제하시겠습니까?")) {
+      const { error } = await supabase
+        .from("comments")
+        .delete()
+        .eq("id", commentId);
+
+      if (error) {
+        console.error("Error deleting comment:", error);
+        alert("댓글 삭제 중 오류가 발생했습니다.");
+      } else {
+        fetchComments(); // Refresh comments after deleting
+      }
+    }
+  }
+
   function formatDate(date) {
     return formatDistanceToNow(new Date(date), { addSuffix: true, locale: ko });
   }
@@ -110,25 +179,140 @@ export function CycleCard({ cycle, currentUser }) {
                 {cycle.medium}
               </span>
             )}
+            {currentUser.id === cycle.user_id && (
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <MoreVertical className="h-5 w-5" />
+                  </Button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content
+                  className="w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                  align="end"
+                >
+                  <DropdownMenu.Item
+                    onSelect={() => setIsEditing(true)}
+                    className="flex items-center p-2 cursor-pointer hover:bg-gray-100"
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    <span>수정</span>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item
+                    onSelect={handleDelete}
+                    className="flex items-center p-2 cursor-pointer hover:bg-gray-100 text-red-600"
+                  >
+                    <Trash className="mr-2 h-4 w-4" />
+                    <span>삭제</span>
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Root>
+            )}
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-lg text-gray-700 mb-4 whitespace-pre-wrap">
-          {cycle.reflection}
-        </p>
+        {isEditing ? (
+          <div className="mb-4">
+            <Textarea
+              value={editedReflection}
+              onChange={(e) => setEditedReflection(e.target.value)}
+              className="w-full p-2 border rounded"
+              rows={4}
+            />
+            <div className="mt-2 space-x-2">
+              <Button onClick={handleEditSubmit}>저장</Button>
+              <Button variant="outline" onClick={() => setIsEditing(false)}>
+                취소
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-4">
+            <p className="text-lg text-gray-700 whitespace-pre-wrap">
+              {cycle.reflection}
+            </p>
+          </div>
+        )}
         <div className="mt-6 space-y-4">
           {comments.map((comment) => (
             <div key={comment.id} className="bg-gray-50 p-3 rounded-lg">
-              <div className="flex items-center space-x-2 mb-1">
-                <span className="font-semibold text-base">
-                  {comment.users.username}
-                </span>
-                <span className="text-sm text-gray-500">
-                  {formatDate(comment.created_at)}
-                </span>
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex flex-col">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-semibold text-base">
+                      {comment.users.username}
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      {formatDate(comment.created_at)}
+                    </span>
+                  </div>
+                  {editingCommentId === comment.id ? (
+                    <div className="mt-2">
+                      <Textarea
+                        value={editedCommentContent}
+                        onChange={(e) =>
+                          setEditedCommentContent(e.target.value)
+                        }
+                        className="w-full p-2 border rounded"
+                        rows={2}
+                      />
+                      <div className="mt-2 space-x-2">
+                        <Button
+                          onClick={() =>
+                            handleCommentEdit(comment.id, editedCommentContent)
+                          }
+                        >
+                          저장
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setEditingCommentId(null)}
+                        >
+                          취소
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-base text-gray-700 mt-1">
+                      {comment.content}
+                    </p>
+                  )}
+                </div>
+                {currentUser.id === comment.user_id && (
+                  <DropdownMenu.Root>
+                    <DropdownMenu.Trigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="h-8 w-8 p-0 hover:bg-gray-200 rounded-full"
+                      >
+                        <MoreVertical className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Content
+                      className="w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                      align="end"
+                    >
+                      <DropdownMenu.Item
+                        onSelect={() => {
+                          setEditingCommentId(comment.id);
+                          setEditedCommentContent(comment.content);
+                        }}
+                        className="flex items-center p-2 cursor-pointer hover:bg-gray-100"
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        <span>수정</span>
+                      </DropdownMenu.Item>
+                      <DropdownMenu.Item
+                        onSelect={() => handleCommentDelete(comment.id)}
+                        className="flex items-center p-2 cursor-pointer hover:bg-gray-100 text-red-600"
+                      >
+                        <Trash className="mr-2 h-4 w-4" />
+                        <span>삭제</span>
+                      </DropdownMenu.Item>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Root>
+                )}
               </div>
-              <p className="text-base text-gray-700">{comment.content}</p>
             </div>
           ))}
         </div>

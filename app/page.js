@@ -136,6 +136,12 @@ export default function Home() {
     }
   }
 
+  function handleCycleDelete(cycleId) {
+    setCycles((prevCycles) =>
+      prevCycles.filter((cycle) => cycle.id !== cycleId)
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       {isLoggedIn && <Header isLoggedIn={isLoggedIn} onLogout={handleLogout} />}
@@ -329,7 +335,12 @@ export default function Home() {
                       cycle.users.username === selectedUser
                   )
                   .map((cycle, index) => (
-                    <CycleCard key={index} cycle={cycle} currentUser={user} />
+                    <CycleCard
+                      key={index}
+                      cycle={cycle}
+                      currentUser={user}
+                      onDelete={handleCycleDelete} // Pass the onDelete function here
+                    />
                   ))}
               </ScrollArea>
             </>
