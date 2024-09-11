@@ -307,7 +307,7 @@ export default function Home() {
                         </p>
                         <div className="flex items-center">
                           <span className="font-semibold mr-2 text-gray-700">
-                            Mediums:
+                            Medium:
                           </span>
                           <div className="flex flex-wrap gap-2">
                             {users
