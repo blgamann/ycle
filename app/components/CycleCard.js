@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { ko } from "date-fns/locale";
 import {
   Card,
@@ -14,7 +14,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "../lib/supabase";
 import Jazzicon from "react-jazzicon";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { MoreVertical, Edit, Trash } from "lucide-react";
+import {
+  MoreVertical,
+  Edit,
+  Trash,
+  Calendar as CalendarIcon,
+  Clock as ClockIcon,
+  MapPin as MapPinIcon,
+} from "lucide-react";
 
 // Add this function outside of the component
 function hashCode(str) {
@@ -211,27 +218,57 @@ export function CycleCard({ cycle, currentUser, onDelete }) {
         </div>
       </CardHeader>
       <CardContent>
-        {isEditing ? (
-          <div className="mb-4">
-            <Textarea
-              value={editedReflection}
-              onChange={(e) => setEditedReflection(e.target.value)}
-              className="w-full p-2 border rounded"
-              rows={4}
-            />
-            <div className="mt-2 space-x-2">
-              <Button onClick={handleEditSubmit}>저장</Button>
-              <Button variant="outline" onClick={() => setIsEditing(false)}>
-                취소
-              </Button>
+        {cycle.type === "event" ? (
+          <div className="bg-gray-100 rounded-lg p-4 mt-4">
+            <h4 className="text-xl font-bold mb-2">
+              {cycle.event_description}
+            </h4>
+            <div className="space-y-2 text-sm text-gray-600">
+              <div className="flex items-center mt-4">
+                <CalendarIcon className="w-5 h-5 mr-2" />
+                <span>
+                  {format(new Date(cycle.event_date), "PPP", { locale: ko })}
+                </span>
+              </div>
+              <div className="flex items-center">
+                <ClockIcon className="w-5 h-5 mr-2" />
+                <span>
+                  {cycle.start_time} - {cycle.end_time}
+                </span>
+              </div>
+              {cycle.event_location && (
+                <div className="flex items-center">
+                  <MapPinIcon className="w-5 h-5 mr-2" />
+                  <span>{cycle.event_location}</span>
+                </div>
+              )}
             </div>
           </div>
         ) : (
-          <div className="mb-4">
-            <p className="text-lg text-gray-700 whitespace-pre-wrap">
-              {cycle.reflection}
-            </p>
-          </div>
+          <>
+            {isEditing ? (
+              <div className="mb-4">
+                <Textarea
+                  value={editedReflection}
+                  onChange={(e) => setEditedReflection(e.target.value)}
+                  className="w-full p-2 border rounded"
+                  rows={4}
+                />
+                <div className="mt-2 space-x-2">
+                  <Button onClick={handleEditSubmit}>저장</Button>
+                  <Button variant="outline" onClick={() => setIsEditing(false)}>
+                    취소
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="mb-4">
+                <p className="text-lg text-gray-700 whitespace-pre-wrap">
+                  {cycle.reflection}
+                </p>
+              </div>
+            )}
+          </>
         )}
         <div className="mt-6 space-y-4">
           {comments.map((comment) => (

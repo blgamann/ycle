@@ -4,7 +4,7 @@ import { supabase } from "./lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label"; // Add this line
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -24,6 +24,7 @@ import { CycleCard } from "./components/CycleCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserAvatar } from "./components/UserAvatar";
 import { Header } from "./components/Header";
+import { Calendar } from "@/components/ui/calendar";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -36,10 +37,27 @@ export default function Home() {
   const [selectedMedium, setSelectedMedium] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState("전체");
+  const [isNewCycleDialogOpen, setIsNewCycleDialogOpen] = useState(false);
+  const [cycleDescription, setCycleDescription] = useState("");
+  const [schedule, setSchedule] = useState("");
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [newCycleMedium, setNewCycleMedium] = useState("");
+  const [newCycleDate, setNewCycleDate] = useState(new Date());
+  const [newCycleLocation, setNewCycleLocation] = useState("");
+  const [newCycleTime, setNewCycleTime] = useState("12:00");
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("17:00");
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     checkUser();
   }, []);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchCycles();
+    }
+  }, [isLoggedIn]);
 
   async function checkUser() {
     const storedUser = localStorage.getItem("user");
@@ -64,9 +82,9 @@ export default function Home() {
       .from("cycles")
       .select(
         `
-      *,
-      users:user_id (id, username, medium)
-    `
+        *,
+        users:user_id (id, username, medium)
+      `
       )
       .order("created_at", { ascending: false });
 
@@ -97,7 +115,7 @@ export default function Home() {
     if (data && data.password === password) {
       setIsLoggedIn(true);
       setUser(data);
-      setSelectedMedium(""); // Add this line
+      setSelectedMedium("");
       localStorage.setItem("user", JSON.stringify(data));
       fetchUsers();
       fetchCycles();
@@ -111,10 +129,10 @@ export default function Home() {
     setUser(null);
     setUsers([]);
     setCycles([]);
-    setSelectedMedium(""); // Add this line
-    setUsername(""); // Add this line
-    setPassword(""); // Add this line
-    setSelectedUser("전체"); // Add this line
+    setSelectedMedium("");
+    setUsername("");
+    setPassword("");
+    setSelectedUser("전체");
     localStorage.removeItem("user");
   }
 
@@ -122,6 +140,7 @@ export default function Home() {
     e.preventDefault();
     const { data, error } = await supabase.from("cycles").insert({
       user_id: user.id,
+      type: "cycle",
       medium: selectedMedium === "없음" ? null : selectedMedium,
       reflection: reflection,
     });
@@ -140,6 +159,65 @@ export default function Home() {
     setCycles((prevCycles) =>
       prevCycles.filter((cycle) => cycle.id !== cycleId)
     );
+  }
+
+  async function handleEventSubmit(e) {
+    e.preventDefault();
+    setErrors({});
+
+    // Validation
+    const newErrors = {};
+    if (!cycleDescription.trim()) {
+      newErrors.cycleDescription = "설명을 입력해주세요.";
+    }
+    if (!newCycleMedium) {
+      newErrors.newCycleMedium = "미디엄을 선택해주세요.";
+    }
+    if (!newCycleDate) {
+      newErrors.newCycleDate = "날짜를 선택해주세요.";
+    }
+    if (!startTime) {
+      newErrors.startTime = "시작 시간을 입력해주세요.";
+    }
+    if (!endTime) {
+      newErrors.endTime = "종료 시간을 입력해주세요.";
+    }
+    if (startTime && endTime && startTime >= endTime) {
+      newErrors.time = "종료 시간은 시작 시간 이후여야 합니다.";
+    }
+    if (!newCycleLocation.trim()) {
+      newErrors.newCycleLocation = "장소를 입력해주세요.";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    const { data, error } = await supabase.from("cycles").insert({
+      user_id: user.id,
+      type: "event",
+      event_description: cycleDescription,
+      medium: newCycleMedium,
+      event_date: newCycleDate.toISOString().split("T")[0],
+      event_location: newCycleLocation,
+      start_time: startTime,
+      end_time: endTime,
+    });
+
+    if (error) {
+      console.error("이벤트 생성 오류:", error.message);
+      setErrors({ submit: "이벤트 생성 중 오류가 발생했습니다." });
+    } else {
+      setCycleDescription("");
+      setNewCycleMedium("");
+      setNewCycleDate(new Date());
+      setNewCycleLocation("");
+      setStartTime("09:00");
+      setEndTime("17:00");
+      setIsNewCycleDialogOpen(false);
+      fetchCycles();
+    }
   }
 
   return (
@@ -251,74 +329,244 @@ export default function Home() {
               )}
 
               {(selectedUser === "전체" || selectedUser === user.username) && (
-                <div className="bg-white rounded-lg shadow hover:shadow-md transition-shadow duration-200">
-                  <Dialog
-                    open={isDialogOpen}
-                    onOpenChange={(open) => {
-                      setIsDialogOpen(open);
-                      if (open) {
-                        setSelectedMedium("");
-                      }
-                    }}
-                  >
-                    <DialogTrigger asChild>
-                      <div className="flex items-center space-x-3 p-4 cursor-pointer">
-                        <span
-                          className="text-3xl"
-                          role="img"
-                          aria-label="pencil"
-                        >
-                          ✏️
-                        </span>
-                        <div className="flex-grow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex-grow bg-white rounded-lg shadow hover:shadow-md transition-shadow duration-200">
+                    <Dialog
+                      open={isDialogOpen}
+                      onOpenChange={(open) => {
+                        setIsDialogOpen(open);
+                        if (open) {
+                          setSelectedMedium("");
+                        }
+                      }}
+                    >
+                      <DialogTrigger asChild>
+                        <div className="flex items-center space-x-3 p-4 cursor-pointer">
+                          <span
+                            className="text-3xl"
+                            role="img"
+                            aria-label="pencil"
+                          >
+                            ✏️
+                          </span>
+                          <div className="flex-grow">
+                            <p className="text-lg text-gray-700">
+                              오늘은 어떤 배움이 있으셨나요?
+                            </p>
+                          </div>
+                        </div>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle className="text-2xl">
+                            기록하기
+                          </DialogTitle>
+                        </DialogHeader>
+                        <div className="mb-4 p-4 bg-gray-50 rounded-md border border-gray-200">
                           <p className="text-lg text-gray-700">
-                            오늘은 어떤 배움이 있으셨나요?
+                            {user.why || "아직 'Why'를 설정하지 않았습니다."}
                           </p>
                         </div>
-                      </div>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle className="text-2xl">기록하기</DialogTitle>
-                      </DialogHeader>
-                      <div className="mb-4 p-4 bg-gray-50 rounded-md border border-gray-200">
-                        <p className="text-lg text-gray-700">
-                          {user.why || "아직 'Why'를 설정하지 않았습니다."}
-                        </p>
-                      </div>
-                      <form onSubmit={handleCycleSubmit} className="space-y-4">
-                        <Select
-                          onValueChange={setSelectedMedium}
-                          value={selectedMedium}
+                        <form
+                          onSubmit={handleCycleSubmit}
+                          className="space-y-4"
                         >
-                          <SelectTrigger className="text-base">
-                            <SelectValue placeholder="미디엄 선택 (선택사항)" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="없음" className="text-base">
-                              없음
-                            </SelectItem>
-                            {user.medium &&
-                              user.medium.map((med, index) => (
-                                <SelectItem
-                                  key={index}
-                                  value={med}
-                                  className="text-base"
-                                >
-                                  {med}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                        <Textarea
-                          placeholder="오늘의 배움을 적어주세요..."
-                          value={reflection}
-                          onChange={(e) => setReflection(e.target.value)}
-                          className="min-h-[150px] w-full text-base"
-                        />
+                          <Select
+                            onValueChange={setSelectedMedium}
+                            value={selectedMedium}
+                          >
+                            <SelectTrigger className="text-base">
+                              <SelectValue placeholder="미디엄 선택 (선택사항)" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="없음" className="text-base">
+                                없음
+                              </SelectItem>
+                              {user.medium &&
+                                user.medium.map((med, index) => (
+                                  <SelectItem
+                                    key={index}
+                                    value={med}
+                                    className="text-base"
+                                  >
+                                    {med}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                          <Textarea
+                            placeholder="오늘의 배움을 적어주세요..."
+                            value={reflection}
+                            onChange={(e) => setReflection(e.target.value)}
+                            className="min-h-[150px] w-full text-base"
+                          />
+                          <div className="flex justify-end">
+                            <Button type="submit" className="text-base">
+                              공유
+                            </Button>
+                          </div>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+
+                  <Dialog
+                    open={isNewCycleDialogOpen}
+                    onOpenChange={setIsNewCycleDialogOpen}
+                  >
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="ml-4 bg-primary text-white hover:bg-primary/90 rounded-full w-16 h-16 flex items-center justify-center"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="w-10 h-10"
+                        >
+                          <line x1="12" y1="5" x2="12" y2="19"></line>
+                          <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span className="sr-only">새 사이클 계획</span>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[450px]">
+                      <DialogHeader>
+                        <DialogTitle className="text-2xl">
+                          사이클 일정 생성
+                        </DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleEventSubmit} className="space-y-4">
+                        {errors.submit && (
+                          <p className="text-red-500 text-sm">
+                            {errors.submit}
+                          </p>
+                        )}
+                        <div className="space-y-2">
+                          <Label htmlFor="cycleDescription">설명</Label>
+                          <Textarea
+                            id="cycleDescription"
+                            value={cycleDescription}
+                            onChange={(e) =>
+                              setCycleDescription(e.target.value)
+                            }
+                            placeholder="무엇을 하시나요?"
+                            className="min-h-[100px]"
+                          />
+                          {errors.cycleDescription && (
+                            <p className="text-red-500 text-sm">
+                              {errors.cycleDescription}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="cycleMedium">미디엄 선택</Label>
+                          <Select
+                            onValueChange={setNewCycleMedium}
+                            value={newCycleMedium}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="미디엄 선택" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {user.medium &&
+                                user.medium.map((med, index) => (
+                                  <SelectItem key={index} value={med}>
+                                    {med}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                          {errors.newCycleMedium && (
+                            <p className="text-red-500 text-sm">
+                              {errors.newCycleMedium}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>일자</Label>
+                          <div className="flex space-x-4">
+                            <div className="flex-grow flex justify-center">
+                              <Calendar
+                                mode="single"
+                                selected={newCycleDate}
+                                onSelect={setNewCycleDate}
+                                className="rounded-md border mx-auto"
+                              />
+                            </div>
+                          </div>
+                          {errors.newCycleDate && (
+                            <p className="text-red-500 text-sm">
+                              {errors.newCycleDate}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex space-x-4">
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="startTime">시작 시간</Label>
+                              <Input
+                                id="startTime"
+                                type="time"
+                                value={startTime}
+                                onChange={(e) => setStartTime(e.target.value)}
+                              />
+                              {errors.startTime && (
+                                <p className="text-red-500 text-sm">
+                                  {errors.startTime}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="endTime">종료 시간</Label>
+                              <Input
+                                id="endTime"
+                                type="time"
+                                value={endTime}
+                                onChange={(e) => setEndTime(e.target.value)}
+                              />
+                              {errors.endTime && (
+                                <p className="text-red-500 text-sm">
+                                  {errors.endTime}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          {errors.time && (
+                            <p className="text-red-500 text-sm">
+                              {errors.time}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="cycleLocation">장소</Label>
+                          <Input
+                            id="cycleLocation"
+                            value={newCycleLocation}
+                            onChange={(e) =>
+                              setNewCycleLocation(e.target.value)
+                            }
+                            placeholder="장소를 입력하세요"
+                          />
+                          {errors.newCycleLocation && (
+                            <p className="text-red-500 text-sm">
+                              {errors.newCycleLocation}
+                            </p>
+                          )}
+                        </div>
+
                         <div className="flex justify-end">
                           <Button type="submit" className="text-base">
-                            공유
+                            만들기
                           </Button>
                         </div>
                       </form>
@@ -327,8 +575,8 @@ export default function Home() {
                 </div>
               )}
 
-              <ScrollArea>
-                {cycles
+              {cycles.length > 0 ? (
+                cycles
                   .filter(
                     (cycle) =>
                       selectedUser === "전체" ||
@@ -336,13 +584,15 @@ export default function Home() {
                   )
                   .map((cycle, index) => (
                     <CycleCard
-                      key={index}
+                      key={cycle.id}
                       cycle={cycle}
                       currentUser={user}
-                      onDelete={handleCycleDelete} // Pass the onDelete function here
+                      onDelete={handleCycleDelete}
                     />
-                  ))}
-              </ScrollArea>
+                  ))
+              ) : (
+                <p>No cycles or events found.</p>
+              )}
             </>
           )}
         </div>
