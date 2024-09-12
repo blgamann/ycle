@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { formatDistanceToNow, format } from "date-fns";
 import { ko } from "date-fns/locale";
 import {
@@ -32,6 +32,49 @@ function hashCode(str) {
     hash = hash & hash; // Convert to 32bit integer
   }
   return Math.abs(hash);
+}
+
+// Add these new functions
+function isValidUrl(string) {
+  try {
+    new URL(string);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function truncateUrl(url, maxLength = 30) {
+  if (url.length <= maxLength) return url;
+  return url.substr(0, maxLength - 3) + "...";
+}
+
+function linkifyText(text) {
+  const lines = text.split("\n");
+  return lines.map((line, lineIndex) => {
+    const words = line.split(/(\s+)/);
+    return (
+      <React.Fragment key={lineIndex}>
+        {words.map((word, wordIndex) => {
+          if (isValidUrl(word)) {
+            return (
+              <a
+                key={wordIndex}
+                href={word}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                {truncateUrl(word)}
+              </a>
+            );
+          }
+          return word;
+        })}
+        {lineIndex < lines.length - 1 && <br />}
+      </React.Fragment>
+    );
+  });
 }
 
 export function CycleCard({ cycle, currentUser, onDelete }) {
@@ -264,7 +307,7 @@ export function CycleCard({ cycle, currentUser, onDelete }) {
             ) : (
               <div className="mb-4">
                 <p className="text-lg text-gray-700 whitespace-pre-wrap">
-                  {cycle.reflection}
+                  {linkifyText(cycle.reflection)}
                 </p>
               </div>
             )}
@@ -311,7 +354,7 @@ export function CycleCard({ cycle, currentUser, onDelete }) {
                     </div>
                   ) : (
                     <p className="text-base text-gray-700 mt-1">
-                      {comment.content}
+                      {linkifyText(comment.content)}
                     </p>
                   )}
                 </div>
