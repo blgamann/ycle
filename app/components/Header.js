@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export function Header({ isLoggedIn, onLogout }) {
@@ -6,17 +7,27 @@ export function Header({ isLoggedIn, onLogout }) {
     <header>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         <div className="flex justify-between items-center h-20">
-          <Image
-            src="/logo.png"
-            alt="Logo"
-            width={130}
-            height={130}
-            className="object-contain"
-          />
+          <Link href="/">
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={130}
+              height={130}
+              className="object-contain"
+            />
+          </Link>
           {isLoggedIn && (
-            <Button onClick={onLogout} variant="outline" size="sm">
-              로그아웃
-            </Button>
+            <div>
+              {/* <Link
+                href="/leaderboard"
+                className="text-gray-600 hover:text-gray-900 mr-6"
+              >
+                Leaderboard
+              </Link> */}
+              <Button onClick={onLogout} variant="outline" size="sm">
+                로그아웃
+              </Button>
+            </div>
           )}
         </div>
       </div>
