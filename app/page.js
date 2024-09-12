@@ -201,8 +201,8 @@ export default function Home() {
       medium: newCycleMedium,
       event_date: newCycleDate.toISOString().split("T")[0],
       event_location: newCycleLocation,
-      start_time: startTime,
-      end_time: endTime,
+      event_start_time: startTime,
+      event_end_time: endTime,
     });
 
     if (error) {
@@ -435,9 +435,9 @@ export default function Home() {
                         <span className="sr-only">새 사이클 계획</span>
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[450px]">
+                    <DialogContent className="w-full max-w-[95vw] sm:max-w-[450px] h-[90vh] sm:h-auto overflow-y-auto">
                       <DialogHeader>
-                        <DialogTitle className="text-2xl">
+                        <DialogTitle className="text-xl sm:text-2xl">
                           사이클 일정 생성
                         </DialogTitle>
                       </DialogHeader>
@@ -492,15 +492,13 @@ export default function Home() {
 
                         <div className="space-y-2">
                           <Label>일자</Label>
-                          <div className="flex space-x-4">
-                            <div className="flex-grow flex justify-center">
-                              <Calendar
-                                mode="single"
-                                selected={newCycleDate}
-                                onSelect={setNewCycleDate}
-                                className="rounded-md border mx-auto"
-                              />
-                            </div>
+                          <div className="flex justify-center">
+                            <Calendar
+                              mode="single"
+                              selected={newCycleDate}
+                              onSelect={setNewCycleDate}
+                              className="rounded-md border mx-auto w-full max-w-[300px]"
+                            />
                           </div>
                           {errors.newCycleDate && (
                             <p className="text-red-500 text-sm">
@@ -510,8 +508,8 @@ export default function Home() {
                         </div>
 
                         <div className="space-y-2">
-                          <div className="flex space-x-4">
-                            <div className="flex-1 space-y-2">
+                          <div className="flex flex-col sm:flex-row sm:space-x-4">
+                            <div className="flex-1 space-y-2 mb-2 sm:mb-0">
                               <Label htmlFor="startTime">시작 시간</Label>
                               <Input
                                 id="startTime"
@@ -564,7 +562,7 @@ export default function Home() {
                           )}
                         </div>
 
-                        <div className="flex justify-end">
+                        <div className="flex justify-end pt-4">
                           <Button type="submit" className="text-base">
                             만들기
                           </Button>

@@ -233,7 +233,7 @@ export function CycleCard({ cycle, currentUser, onDelete }) {
               <div className="flex items-center">
                 <ClockIcon className="w-5 h-5 mr-2" />
                 <span>
-                  {cycle.start_time} - {cycle.end_time}
+                  {cycle.event_start_time} - {cycle.event_end_time}
                 </span>
               </div>
               {cycle.event_location && (
