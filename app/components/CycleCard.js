@@ -21,7 +21,16 @@ import {
   Calendar as CalendarIcon,
   Clock as ClockIcon,
   MapPin as MapPinIcon,
+  Repeat,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { MiniCycleCard } from "./MiniCycleCard";
 
 // Add this function outside of the component
 function hashCode(str) {
@@ -83,7 +92,7 @@ function formatTime(timeString) {
   return timeString.slice(0, 5); // This will return the first 5 characters, i.e., HH:mm
 }
 
-export function CycleCard({ cycle, currentUser, onDelete }) {
+export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   const [newComment, setNewComment] = useState("");
   const [isCommenting, setIsCommenting] = useState(false);
   const [comments, setComments] = useState([]);
@@ -91,10 +100,16 @@ export function CycleCard({ cycle, currentUser, onDelete }) {
   const [editedReflection, setEditedReflection] = useState(cycle.reflection);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editedCommentContent, setEditedCommentContent] = useState("");
+  const [isRecycleDialogOpen, setIsRecycleDialogOpen] = useState(false);
+  const [recycleContent, setRecycleContent] = useState("");
+  const [originalCycle, setOriginalCycle] = useState(null);
 
   useEffect(() => {
     fetchComments();
-  }, [cycle.id]);
+    if (cycle.recycled_from) {
+      fetchOriginalCycle();
+    }
+  }, [cycle.id, cycle.recycled_from]);
 
   function getInitials(name) {
     return name ? name.charAt(0).toUpperCase() : "?";
@@ -122,6 +137,20 @@ export function CycleCard({ cycle, currentUser, onDelete }) {
       console.error("Error fetching comments:", error);
     } else {
       setComments(data);
+    }
+  }
+
+  async function fetchOriginalCycle() {
+    const { data, error } = await supabase
+      .from("cycles")
+      .select("*, users:user_id (*)")
+      .eq("id", cycle.recycled_from)
+      .single();
+
+    if (error) {
+      console.error("Error fetching original cycle:", error);
+    } else {
+      setOriginalCycle(data);
     }
   }
 
@@ -206,6 +235,30 @@ export function CycleCard({ cycle, currentUser, onDelete }) {
         alert("댓글 삭제 중 오류가 발생했습니다.");
       } else {
         fetchComments(); // Refresh comments after deleting
+      }
+    }
+  }
+
+  async function handleRecycle(e) {
+    e.preventDefault();
+    const { data, error } = await supabase.from("cycles").insert({
+      user_id: currentUser.id,
+      reflection: recycleContent,
+      recycled_from: cycle.id,
+      type: "cycle",
+      // Add other necessary fields
+    });
+
+    if (error) {
+      console.error("Error recycling cycle:", error);
+      alert("리사이클 중 오류가 발생했습니다.");
+    } else {
+      setIsRecycleDialogOpen(false);
+      setRecycleContent("");
+      // Optionally, you can refresh the cycles list or add the new cycle to the existing list
+
+      if (onRecycle) {
+        onRecycle();
       }
     }
   }
@@ -296,6 +349,11 @@ export function CycleCard({ cycle, currentUser, onDelete }) {
           </div>
         ) : (
           <>
+            {originalCycle && (
+              <div className="mt-4 mb-4">
+                <MiniCycleCard cycle={originalCycle} />
+              </div>
+            )}
             {isEditing ? (
               <div className="mb-4">
                 <Textarea
@@ -318,6 +376,17 @@ export function CycleCard({ cycle, currentUser, onDelete }) {
                 </p>
               </div>
             )}
+            <div className="mt-4 flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsRecycleDialogOpen(true)}
+                className="flex items-center space-x-2 text-green-600 border-green-300 hover:bg-green-50 hover:text-green-700 hover:border-green-400 transition-colors"
+              >
+                <Repeat className="h-4 w-4" />
+                <span>리사이클</span>
+              </Button>
+            </div>
           </>
         )}
         <div className="mt-6 space-y-4">
@@ -422,6 +491,48 @@ export function CycleCard({ cycle, currentUser, onDelete }) {
           </Button>
         </form>
       </CardFooter>
+      {cycle.type !== "event" && (
+        <Dialog
+          open={isRecycleDialogOpen}
+          onOpenChange={setIsRecycleDialogOpen}
+        >
+          <DialogContent className="sm:max-w-[525px]">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-semibold">
+                리사이클
+              </DialogTitle>
+              <DialogDescription className="text-base">
+                이 사이클에서 어떤 배움이 발견되었나요?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-2">
+              <MiniCycleCard cycle={cycle} clickable={false} />
+            </div>
+            <form onSubmit={handleRecycle} className="mt-2">
+              <Textarea
+                className="mt-4 text-base"
+                placeholder="해당 사이클에서 발견한 배움을 작성해주세요..."
+                value={recycleContent}
+                onChange={(e) => setRecycleContent(e.target.value)}
+                rows={4}
+              />
+              <div className="mt-6 flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsRecycleDialogOpen(false)}
+                  className="text-base"
+                >
+                  취소
+                </Button>
+                <Button type="submit" className="text-base">
+                  리사이클
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </Card>
   );
 }

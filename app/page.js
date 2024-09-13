@@ -59,14 +59,14 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (isLoggedIn && page === 0) {
-      fetchCycles();
+    if (isLoggedIn) {
+      fetchCycles(true); // Reset and fetch cycles when logged in
     }
   }, [isLoggedIn]);
 
   useEffect(() => {
     if (inView && hasMore && !isLoading && isLoggedIn) {
-      fetchCycles();
+      fetchCycles(false); // Fetch more cycles when scrolling
     }
   }, [inView, hasMore, isLoading, isLoggedIn]);
 
@@ -94,38 +94,44 @@ export default function Home() {
     if (data) setUsers(data);
   }
 
-  async function fetchCycles() {
+  async function fetchCycles(resetPage = false) {
     if (isLoading) return;
     setIsLoading(true);
 
     const pageSize = 10;
-    const from = page * pageSize;
+    const newPage = resetPage ? 0 : page;
+    const from = newPage * pageSize;
     const to = from + pageSize - 1;
 
-    const { data, error } = await supabase
-      .from("cycles")
-      .select(
-        `
-        *,
-        users:user_id (id, username, medium)
-      `
-      )
-      .order("created_at", { ascending: false })
-      .range(from, to);
+    console.log(`Fetching page: ${newPage}, range: ${from}-${to}`);
 
-    if (error) {
-      console.error("Error fetching cycles:", error);
-      setIsLoading(false);
-      return;
-    }
+    try {
+      const { data, error } = await supabase
+        .from("cycles")
+        .select(`*, users:user_id (id, username, medium)`)
+        .order("created_at", { ascending: false })
+        .range(from, to);
 
-    if (data) {
+      if (error) throw error;
+
       console.log("Fetched cycles:", data);
-      setCycles((prevCycles) => (page === 0 ? data : [...prevCycles, ...data]));
+
+      setCycles((prevCycles) => {
+        const newCycles = resetPage ? data : [...prevCycles, ...data];
+        // Remove duplicates based on id
+        const uniqueCycles = Array.from(
+          new Map(newCycles.map((item) => [item.id, item])).values()
+        );
+        return uniqueCycles;
+      });
+
       setHasMore(data.length === pageSize);
-      setPage(page + 1); // 현재 page 값을 직접 사용
+      setPage(newPage + 1);
+    } catch (error) {
+      console.error("Error fetching cycles:", error);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   async function handleLogin(e) {
@@ -147,10 +153,9 @@ export default function Home() {
       setSelectedMedium("");
       localStorage.setItem("user", JSON.stringify(data));
       fetchUsers();
-      setPage(0); // 페이지를 0으로 리셋
-      setCycles([]); // 기존 사이클 데이터 초기화
+      setPage(0);
+      setCycles([]);
       setHasMore(true);
-      // fetchCycles()는 useEffect에서 isLoggedIn이 변경될 때 호출됩니다.
     } else {
       alert("잘못된 사용자 이름 또는 비밀번호입니다.");
     }
@@ -254,8 +259,15 @@ export default function Home() {
     }
   }
 
+  async function handleRecycle() {
+    setPage(0);
+    setCycles([]);
+    setHasMore(true);
+    await fetchCycles(true);
+  }
+
   if (!isClient) {
-    return null; // or a loading spinner
+    return null;
   }
 
   return (
@@ -621,12 +633,13 @@ export default function Home() {
                             selectedUser === "전체" ||
                             cycle.users.username === selectedUser
                         )
-                        .map((cycle, index) => (
+                        .map((cycle) => (
                           <CycleCard
                             key={cycle.id}
                             cycle={cycle}
                             currentUser={user}
                             onDelete={handleCycleDelete}
+                            onRecycle={handleRecycle}
                           />
                         ))}
                       {hasMore && (
