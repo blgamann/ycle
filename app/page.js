@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "./lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,7 @@ import { UserAvatar } from "./components/UserAvatar";
 import { Header } from "./components/Header";
 import { Calendar } from "@/components/ui/calendar";
 import { useInView } from "react-intersection-observer";
+import { RecordDialog } from "./components/RecordDialog";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -32,10 +33,7 @@ export default function Home() {
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
   const [users, setUsers] = useState([]);
-  const [reflection, setReflection] = useState("");
   const [cycles, setCycles] = useState([]);
-  const [selectedMedium, setSelectedMedium] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState("전체");
   const [isNewCycleDialogOpen, setIsNewCycleDialogOpen] = useState(false);
   const [cycleDescription, setCycleDescription] = useState("");
@@ -150,7 +148,6 @@ export default function Home() {
     if (data && data.password === password) {
       setIsLoggedIn(true);
       setUser(data);
-      setSelectedMedium("");
       localStorage.setItem("user", JSON.stringify(data));
       fetchUsers();
       setPage(0);
@@ -166,33 +163,30 @@ export default function Home() {
     setUser(null);
     setUsers([]);
     setCycles([]);
-    setSelectedMedium("");
-    setUsername("");
-    setPassword("");
     setSelectedUser("전체");
     setPage(0);
     setHasMore(true);
     localStorage.removeItem("user");
   }
 
-  async function handleCycleSubmit(e) {
-    e.preventDefault();
+  const addCycle = useCallback((newCycle) => {
+    setCycles(prevCycles => [newCycle, ...prevCycles]);
+  }, []);
+
+  const handleCycleSubmit = async ({ reflection, medium }) => {
     const { data, error } = await supabase.from("cycles").insert({
       user_id: user.id,
       type: "cycle",
-      medium: selectedMedium === "없음" ? null : selectedMedium,
+      medium: medium,
       reflection: reflection,
-    });
+    }).select('*, users:user_id (id, username, medium)');
 
     if (error) {
       alert("사이클 작성 오류: " + error.message);
     } else {
-      setReflection("");
-      setSelectedMedium("");
-      fetchCycles();
-      setIsDialogOpen(false);
+      addCycle(data[0]); // 새로 생성된 cycle을 상태에 추가
     }
-  }
+  };
 
   function handleCycleDelete(cycleId) {
     setCycles((prevCycles) =>
@@ -380,85 +374,9 @@ export default function Home() {
 
               {(selectedUser === "전체" || selectedUser === user.username) && (
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex-grow bg-white rounded-lg shadow hover:shadow-md transition-shadow duration-200">
-                    <Dialog
-                      open={isDialogOpen}
-                      onOpenChange={(open) => {
-                        setIsDialogOpen(open);
-                        if (open) {
-                          setSelectedMedium("");
-                        }
-                      }}
-                    >
-                      <DialogTrigger asChild>
-                        <div className="flex items-center space-x-3 p-4 cursor-pointer">
-                          <span
-                            className="text-3xl"
-                            role="img"
-                            aria-label="pencil"
-                          >
-                            ✏️
-                          </span>
-                          <div className="flex-grow">
-                            <p className="text-lg text-gray-700">
-                              오늘은 어떤 배움이 있으셨나요?
-                            </p>
-                          </div>
-                        </div>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                          <DialogTitle className="text-2xl">
-                            기록하기
-                          </DialogTitle>
-                        </DialogHeader>
-                        <div className="mb-4 p-4 bg-gray-50 rounded-md border border-gray-200">
-                          <p className="text-lg text-gray-700">
-                            {user.why || "아직 'Why'를 설정하지 않았습니다."}
-                          </p>
-                        </div>
-                        <form
-                          onSubmit={handleCycleSubmit}
-                          className="space-y-4"
-                        >
-                          <Select
-                            onValueChange={setSelectedMedium}
-                            value={selectedMedium}
-                          >
-                            <SelectTrigger className="text-base">
-                              <SelectValue placeholder="미디엄 선택 (선택사항)" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="없음" className="text-base">
-                                없음
-                              </SelectItem>
-                              {user.medium &&
-                                user.medium.map((med, index) => (
-                                  <SelectItem
-                                    key={index}
-                                    value={med}
-                                    className="text-base"
-                                  >
-                                    {med}
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
-                          <Textarea
-                            placeholder="오늘의 배움을 적어주세요..."
-                            value={reflection}
-                            onChange={(e) => setReflection(e.target.value)}
-                            className="min-h-[150px] w-full text-base"
-                          />
-                          <div className="flex justify-end">
-                            <Button type="submit" className="text-base">
-                              공유
-                            </Button>
-                          </div>
-                        </form>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
+                  {isLoggedIn && user && (
+                    <RecordDialog user={user} onSubmit={handleCycleSubmit} />
+                  )}
 
                   <Dialog
                     open={isNewCycleDialogOpen}
