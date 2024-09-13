@@ -21,7 +21,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { CycleCard } from "./components/CycleCard";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserAvatar } from "./components/UserAvatar";
 import { Header } from "./components/Header";
 import { Calendar } from "@/components/ui/calendar";
@@ -40,12 +39,9 @@ export default function Home() {
   const [selectedUser, setSelectedUser] = useState("전체");
   const [isNewCycleDialogOpen, setIsNewCycleDialogOpen] = useState(false);
   const [cycleDescription, setCycleDescription] = useState("");
-  const [schedule, setSchedule] = useState("");
-  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [newCycleMedium, setNewCycleMedium] = useState("");
-  const [newCycleDate, setNewCycleDate] = useState(new Date());
+  const [newCycleDate, setNewCycleDate] = useState(null);
   const [newCycleLocation, setNewCycleLocation] = useState("");
-  const [newCycleTime, setNewCycleTime] = useState("12:00");
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
   const [errors, setErrors] = useState({});
@@ -55,8 +51,10 @@ export default function Home() {
   const { ref, inView } = useInView({
     threshold: 0,
   });
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     checkUser();
   }, []);
 
@@ -71,6 +69,12 @@ export default function Home() {
       fetchCycles();
     }
   }, [inView, hasMore, isLoading, isLoggedIn]);
+
+  useEffect(() => {
+    if (isClient) {
+      setNewCycleDate(new Date());
+    }
+  }, [isClient]);
 
   async function checkUser() {
     const storedUser = localStorage.getItem("user");
@@ -248,6 +252,10 @@ export default function Home() {
       setIsNewCycleDialogOpen(false);
       fetchCycles();
     }
+  }
+
+  if (!isClient) {
+    return null; // or a loading spinner
   }
 
   return (
