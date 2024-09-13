@@ -77,6 +77,12 @@ function linkifyText(text) {
   });
 }
 
+// Add this new function to format the time
+function formatTime(timeString) {
+  if (!timeString) return "";
+  return timeString.slice(0, 5); // This will return the first 5 characters, i.e., HH:mm
+}
+
 export function CycleCard({ cycle, currentUser, onDelete }) {
   const [newComment, setNewComment] = useState("");
   const [isCommenting, setIsCommenting] = useState(false);
@@ -276,7 +282,8 @@ export function CycleCard({ cycle, currentUser, onDelete }) {
               <div className="flex items-center">
                 <ClockIcon className="w-5 h-5 mr-2" />
                 <span>
-                  {cycle.event_start_time} - {cycle.event_end_time}
+                  {formatTime(cycle.event_start_time)} -{" "}
+                  {formatTime(cycle.event_end_time)}
                 </span>
               </div>
               {cycle.event_location && (
