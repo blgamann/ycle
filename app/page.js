@@ -25,6 +25,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserAvatar } from "./components/UserAvatar";
 import { Header } from "./components/Header";
 import { Calendar } from "@/components/ui/calendar";
+import { useInView } from "react-intersection-observer";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -48,16 +49,28 @@ export default function Home() {
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
   const [errors, setErrors] = useState({});
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const { ref, inView } = useInView({
+    threshold: 0,
+  });
 
   useEffect(() => {
     checkUser();
   }, []);
 
   useEffect(() => {
-    if (isLoggedIn) {
+    if (isLoggedIn && page === 0) {
       fetchCycles();
     }
   }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (inView && hasMore && !isLoading && isLoggedIn) {
+      fetchCycles();
+    }
+  }, [inView, hasMore, isLoading, isLoggedIn]);
 
   async function checkUser() {
     const storedUser = localStorage.getItem("user");
@@ -78,6 +91,13 @@ export default function Home() {
   }
 
   async function fetchCycles() {
+    if (isLoading) return;
+    setIsLoading(true);
+
+    const pageSize = 10;
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+
     const { data, error } = await supabase
       .from("cycles")
       .select(
@@ -86,17 +106,22 @@ export default function Home() {
         users:user_id (id, username, medium)
       `
       )
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     if (error) {
       console.error("Error fetching cycles:", error);
+      setIsLoading(false);
       return;
     }
 
     if (data) {
       console.log("Fetched cycles:", data);
-      setCycles(data);
+      setCycles((prevCycles) => (page === 0 ? data : [...prevCycles, ...data]));
+      setHasMore(data.length === pageSize);
+      setPage(page + 1); // 현재 page 값을 직접 사용
     }
+    setIsLoading(false);
   }
 
   async function handleLogin(e) {
@@ -118,7 +143,10 @@ export default function Home() {
       setSelectedMedium("");
       localStorage.setItem("user", JSON.stringify(data));
       fetchUsers();
-      fetchCycles();
+      setPage(0); // 페이지를 0으로 리셋
+      setCycles([]); // 기존 사이클 데이터 초기화
+      setHasMore(true);
+      // fetchCycles()는 useEffect에서 isLoggedIn이 변경될 때 호출됩니다.
     } else {
       alert("잘못된 사용자 이름 또는 비밀번호입니다.");
     }
@@ -133,6 +161,8 @@ export default function Home() {
     setUsername("");
     setPassword("");
     setSelectedUser("전체");
+    setPage(0);
+    setHasMore(true);
     localStorage.removeItem("user");
   }
 
@@ -573,23 +603,33 @@ export default function Home() {
                 </div>
               )}
 
-              {cycles.length > 0 ? (
-                cycles
-                  .filter(
-                    (cycle) =>
-                      selectedUser === "전체" ||
-                      cycle.users.username === selectedUser
-                  )
-                  .map((cycle, index) => (
-                    <CycleCard
-                      key={cycle.id}
-                      cycle={cycle}
-                      currentUser={user}
-                      onDelete={handleCycleDelete}
-                    />
-                  ))
-              ) : (
-                <p>No cycles or events found.</p>
+              {isLoggedIn && (
+                <>
+                  {cycles.length > 0 ? (
+                    <>
+                      {cycles
+                        .filter(
+                          (cycle) =>
+                            selectedUser === "전체" ||
+                            cycle.users.username === selectedUser
+                        )
+                        .map((cycle, index) => (
+                          <CycleCard
+                            key={cycle.id}
+                            cycle={cycle}
+                            currentUser={user}
+                            onDelete={handleCycleDelete}
+                          />
+                        ))}
+                      {hasMore && (
+                        <div ref={ref} style={{ height: "20px" }}></div>
+                      )}
+                      {isLoading && <p>Loading more cycles...</p>}
+                    </>
+                  ) : (
+                    <p>No cycles or events found.</p>
+                  )}
+                </>
               )}
             </>
           )}
