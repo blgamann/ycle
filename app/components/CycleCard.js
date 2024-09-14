@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { formatDistanceToNow, format } from "date-fns";
 import { ko } from "date-fns/locale";
 import {
@@ -9,7 +9,6 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "../lib/supabase";
 import Jazzicon from "react-jazzicon";
@@ -103,6 +102,8 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   const [isRecycleDialogOpen, setIsRecycleDialogOpen] = useState(false);
   const [recycleContent, setRecycleContent] = useState("");
   const [originalCycle, setOriginalCycle] = useState(null);
+  const textareaRef = useRef(null);
+  const editTextareaRef = useRef(null);
 
   useEffect(() => {
     fetchComments();
@@ -110,6 +111,31 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
       fetchOriginalCycle();
     }
   }, [cycle.id, cycle.recycled_from]);
+
+  useEffect(() => {
+    adjustTextareaHeight(textareaRef);
+  }, [newComment]);
+
+  useEffect(() => {
+    if (editingCommentId !== null) {
+      adjustTextareaHeight(editTextareaRef);
+      if (editTextareaRef.current) {
+        editTextareaRef.current.focus();
+        // 커서를 텍스트 끝으로 이동
+        editTextareaRef.current.setSelectionRange(
+          editTextareaRef.current.value.length,
+          editTextareaRef.current.value.length
+        );
+      }
+    }
+  }, [editingCommentId, editedCommentContent]);
+
+  function adjustTextareaHeight(ref) {
+    if (ref.current) {
+      ref.current.style.height = "auto";
+      ref.current.style.height = ref.current.scrollHeight + "px";
+    }
+  }
 
   function getInitials(name) {
     return name ? name.charAt(0).toUpperCase() : "?";
@@ -393,7 +419,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
           {comments.map((comment) => (
             <div key={comment.id} className="bg-gray-50 p-3 rounded-lg">
               <div className="flex justify-between items-start mb-2">
-                <div className="flex flex-col">
+                <div className="flex flex-col w-full">
                   <div className="flex items-center space-x-2">
                     <span className="font-semibold text-base">
                       {comment.users.username}
@@ -403,14 +429,16 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
                     </span>
                   </div>
                   {editingCommentId === comment.id ? (
-                    <div className="mt-2">
-                      <Textarea
+                    <div className="mt-2 w-full">
+                      <textarea
+                        ref={editTextareaRef}
                         value={editedCommentContent}
-                        onChange={(e) =>
-                          setEditedCommentContent(e.target.value)
-                        }
-                        className="w-full p-2 border rounded"
-                        rows={2}
+                        onChange={(e) => {
+                          setEditedCommentContent(e.target.value);
+                          adjustTextareaHeight(editTextareaRef);
+                        }}
+                        className="w-full text-base p-2 border rounded resize-none overflow-hidden min-h-[40px]"
+                        rows={1}
                       />
                       <div className="mt-2 space-x-2">
                         <Button
@@ -475,12 +503,13 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
       </CardContent>
       <CardFooter>
         <form onSubmit={handleCommentSubmit} className="w-full flex space-x-2">
-          <Input
-            type="text"
+          <textarea
+            ref={textareaRef}
             placeholder="댓글을 입력하세요..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            className="flex-grow text-base"
+            className="flex-grow text-base p-2 border rounded resize-none overflow-hidden min-h-[40px]"
+            rows={1}
           />
           <Button
             type="submit"
