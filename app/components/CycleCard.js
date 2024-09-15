@@ -19,6 +19,7 @@ import {
   Clock as ClockIcon,
   MapPin as MapPinIcon,
   Repeat,
+  Heart,
 } from "lucide-react";
 import {
   Dialog,
@@ -33,7 +34,7 @@ import { linkifyText } from "../utils/url";
 
 import { useComments } from "../hooks/useComments";
 import { useOriginalCycle } from "../hooks/useOriginalCycle";
-
+import { useLikes } from "../hooks/useLikes";
 // Main CycleCard Component
 export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   const [newComment, setNewComment] = useState("");
@@ -50,6 +51,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
 
   const { comments, fetchComments } = useComments(cycle.id);
   const originalCycle = useOriginalCycle(cycle.recycled_from);
+  const { likeCount, isLiked, toggleLike } = useLikes(cycle.id, currentUser.id);
 
   const user = cycle.users || {};
   const username = user.username || "알 수 없는 사용자";
@@ -65,7 +67,6 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   useEffect(() => {
     adjustTextareaHeight(textareaRef);
   }, [newComment, adjustTextareaHeight]);
-
   useEffect(() => {
     if (editTextareaRef.current) {
       adjustTextareaHeight(editTextareaRef);
@@ -126,7 +127,6 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
       onDelete(cycle.id);
     }
   };
-
   const handleCommentEdit = async (commentId, newContent) => {
     const trimmed = newContent.trim();
     if (!trimmed) return;
@@ -182,7 +182,6 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
       onRecycle?.();
     }
   };
-
   return (
     <Card className="mb-6 hover:shadow-lg transition-shadow duration-200">
       <CardHeader className="pb-3">
@@ -215,7 +214,12 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
             ) : (
               <ReflectionDisplay reflection={cycle.reflection} />
             )}
-            <RecycleButton onOpen={() => setIsRecycleDialogOpen(true)} />
+            <ActionButtons
+              likeCount={likeCount}
+              isLiked={isLiked}
+              onToggleLike={toggleLike}
+              onOpenRecycleDialog={() => setIsRecycleDialogOpen(true)}
+            />
           </>
         )}
         <CommentsSection
@@ -253,7 +257,6 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
     </Card>
   );
 }
-
 // Header Component
 const Header = ({ username, createdAt, medium, isOwner, onEdit, onDelete }) => (
   <div className="flex justify-between items-center">
@@ -349,7 +352,6 @@ const ReflectionEdit = ({
     </div>
   </div>
 );
-
 // ReflectionDisplay Component
 const ReflectionDisplay = ({ reflection }) => (
   <div className="mb-4">
@@ -359,16 +361,34 @@ const ReflectionDisplay = ({ reflection }) => (
   </div>
 );
 
-// RecycleButton Component
-const RecycleButton = ({ onOpen }) => (
-  <div className="mt-4 flex justify-end">
+// New ActionButtons Component
+const ActionButtons = ({
+  likeCount,
+  isLiked,
+  onToggleLike,
+  onOpenRecycleDialog,
+}) => (
+  <div className="mt-4 flex space-x-2">
     <Button
       variant="outline"
       size="sm"
-      onClick={onOpen}
-      className="flex items-center space-x-2 text-green-600 border-green-300 hover:bg-green-50 hover:text-green-700 hover:border-green-400 transition-colors"
+      onClick={onToggleLike}
+      className={`flex items-center space-x-2 flex-1 justify-center ${
+        isLiked
+          ? "text-red-500 border-red-500"
+          : "text-gray-500 border-gray-300"
+      } hover:bg-gray-100 transition-colors duration-200`}
     >
-      <Repeat className="h-4 w-4" />
+      <Heart className={`h-5 w-5 ${isLiked ? "fill-current" : ""}`} />
+      <span>{likeCount} 좋아요</span>
+    </Button>
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={onOpenRecycleDialog}
+      className="flex items-center space-x-2 flex-1 justify-center text-green-600 border-green-300 hover:bg-green-50 hover:text-green-700 hover:border-green-400 transition-colors"
+    >
+      <Repeat className="h-5 w-5" />
       <span>리사이클</span>
     </Button>
   </div>
@@ -406,7 +426,6 @@ const CommentsSection = ({
     ))}
   </div>
 );
-
 // Comment Component
 const Comment = ({
   comment,
@@ -554,7 +573,6 @@ const CommentForm = ({
     </form>
   );
 };
-
 // RecycleDialog Component
 const RecycleDialog = ({
   isOpen,
