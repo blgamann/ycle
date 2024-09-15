@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { formatDistanceToNow, format } from "date-fns";
-import { ko } from "date-fns/locale";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { getRelativeTime } from "../utils/date";
 import {
   Card,
   CardContent,
@@ -11,7 +10,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "../lib/supabase";
-import Jazzicon from "react-jazzicon";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   MoreVertical,
@@ -30,166 +28,62 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { MiniCycleCard } from "./MiniCycleCard";
+import { UserAvatar } from "./UserAvatar";
+import { linkifyText } from "../utils/url";
 
-// Add this function outside of the component
-function hashCode(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return Math.abs(hash);
-}
+import { useComments } from "../hooks/useComments";
+import { useOriginalCycle } from "../hooks/useOriginalCycle";
 
-// Add these new functions
-function isValidUrl(string) {
-  try {
-    new URL(string);
-    return true;
-  } catch (_) {
-    return false;
-  }
-}
-
-function truncateUrl(url, maxLength = 30) {
-  if (url.length <= maxLength) return url;
-  return url.substr(0, maxLength - 3) + "...";
-}
-
-function linkifyText(text) {
-  const lines = text.split("\n");
-  return lines.map((line, lineIndex) => {
-    const words = line.split(/(\s+)/);
-    return (
-      <React.Fragment key={lineIndex}>
-        {words.map((word, wordIndex) => {
-          if (isValidUrl(word)) {
-            return (
-              <a
-                key={wordIndex}
-                href={word}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
-              >
-                {truncateUrl(word)}
-              </a>
-            );
-          }
-          return word;
-        })}
-        {lineIndex < lines.length - 1 && <br />}
-      </React.Fragment>
-    );
-  });
-}
-
-// Add this new function to format the time
-function formatTime(timeString) {
-  if (!timeString) return "";
-  return timeString.slice(0, 5); // This will return the first 5 characters, i.e., HH:mm
-}
-
+// Main CycleCard Component
 export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   const [newComment, setNewComment] = useState("");
   const [isCommenting, setIsCommenting] = useState(false);
-  const [comments, setComments] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editedReflection, setEditedReflection] = useState(cycle.reflection);
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editedCommentContent, setEditedCommentContent] = useState("");
   const [isRecycleDialogOpen, setIsRecycleDialogOpen] = useState(false);
   const [recycleContent, setRecycleContent] = useState("");
-  const [originalCycle, setOriginalCycle] = useState(null);
+
   const textareaRef = useRef(null);
   const editTextareaRef = useRef(null);
 
-  useEffect(() => {
-    fetchComments();
-    if (cycle.recycled_from) {
-      fetchOriginalCycle();
-    }
-  }, [cycle.id, cycle.recycled_from]);
-
-  useEffect(() => {
-    adjustTextareaHeight(textareaRef);
-  }, [newComment]);
-
-  useEffect(() => {
-    if (editingCommentId !== null) {
-      adjustTextareaHeight(editTextareaRef);
-      if (editTextareaRef.current) {
-        editTextareaRef.current.focus();
-        // 커서를 텍스트 끝으로 이동
-        editTextareaRef.current.setSelectionRange(
-          editTextareaRef.current.value.length,
-          editTextareaRef.current.value.length
-        );
-      }
-    }
-  }, [editingCommentId, editedCommentContent]);
-
-  function adjustTextareaHeight(ref) {
-    if (ref.current) {
-      ref.current.style.height = "auto";
-      ref.current.style.height = ref.current.scrollHeight + "px";
-    }
-  }
-
-  function getInitials(name) {
-    return name ? name.charAt(0).toUpperCase() : "?";
-  }
+  const { comments, fetchComments } = useComments(cycle.id);
+  const originalCycle = useOriginalCycle(cycle.recycled_from);
 
   const user = cycle.users || {};
   const username = user.username || "알 수 없는 사용자";
 
-  // Generate a seed from the username
-  const seed = hashCode(username);
-
-  async function fetchComments() {
-    const { data, error } = await supabase
-      .from("comments")
-      .select(
-        `
-        *,
-        users:user_id (username)
-      `
-      )
-      .eq("cycle_id", cycle.id)
-      .order("created_at", { ascending: true });
-
-    if (error) {
-      console.error("Error fetching comments:", error);
-    } else {
-      setComments(data);
+  // Adjust textarea height dynamically
+  const adjustTextareaHeight = useCallback((ref) => {
+    if (ref.current) {
+      ref.current.style.height = "auto";
+      ref.current.style.height = `${ref.current.scrollHeight}px`;
     }
-  }
+  }, []);
 
-  async function fetchOriginalCycle() {
-    const { data, error } = await supabase
-      .from("cycles")
-      .select("*, users:user_id (*)")
-      .eq("id", cycle.recycled_from)
-      .single();
+  useEffect(() => {
+    adjustTextareaHeight(textareaRef);
+  }, [newComment, adjustTextareaHeight]);
 
-    if (error) {
-      console.error("Error fetching original cycle:", error);
-    } else {
-      setOriginalCycle(data);
+  useEffect(() => {
+    if (editTextareaRef.current) {
+      adjustTextareaHeight(editTextareaRef);
     }
-  }
+  }, [editedCommentContent, adjustTextareaHeight]);
 
-  async function handleCommentSubmit(e) {
+  // Handlers
+  const handleCommentSubmit = async (e) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
+    const trimmed = newComment.trim();
+    if (!trimmed) return;
 
     setIsCommenting(true);
 
-    const { data, error } = await supabase.from("comments").insert({
+    const { error } = await supabase.from("comments").insert({
       user_id: currentUser.id,
       cycle_id: cycle.id,
-      content: newComment.trim(),
+      content: trimmed,
     });
 
     setIsCommenting(false);
@@ -198,14 +92,17 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
       alert("댓글 작성 중 오류가 발생했습니다.");
     } else {
       setNewComment("");
-      fetchComments(); // Refresh comments after submitting
+      fetchComments();
     }
-  }
+  };
 
-  async function handleEditSubmit() {
-    const { data, error } = await supabase
+  const handleEditSubmit = async () => {
+    const trimmed = editedReflection.trim();
+    if (!trimmed) return;
+
+    const { error } = await supabase
       .from("cycles")
-      .update({ reflection: editedReflection })
+      .update({ reflection: trimmed })
       .eq("id", cycle.id);
 
     if (error) {
@@ -213,31 +110,30 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
       alert("수정 중 오류가 발생했습니다.");
     } else {
       setIsEditing(false);
-      // Update the local state to reflect the change
-      cycle.reflection = editedReflection;
+      cycle.reflection = trimmed;
     }
-  }
+  };
 
-  async function handleDelete() {
-    if (window.confirm("정말로 이 사이클을 삭제하시겠습니까?")) {
-      const { error } = await supabase
-        .from("cycles")
-        .delete()
-        .eq("id", cycle.id);
+  const handleDelete = async () => {
+    if (!window.confirm("정말로 이 사이클을 삭제하시겠습니까?")) return;
 
-      if (error) {
-        console.error("Error deleting cycle:", error);
-        alert("삭제 중 오류가 발생했습니다.");
-      } else {
-        onDelete(cycle.id); // Call the onDelete function passed as prop
-      }
+    const { error } = await supabase.from("cycles").delete().eq("id", cycle.id);
+
+    if (error) {
+      console.error("Error deleting cycle:", error);
+      alert("삭제 중 오류가 발생했습니다.");
+    } else {
+      onDelete(cycle.id);
     }
-  }
+  };
 
-  async function handleCommentEdit(commentId, newContent) {
-    const { data, error } = await supabase
+  const handleCommentEdit = async (commentId, newContent) => {
+    const trimmed = newContent.trim();
+    if (!trimmed) return;
+
+    const { error } = await supabase
       .from("comments")
-      .update({ content: newContent })
+      .update({ content: trimmed })
       .eq("id", commentId);
 
     if (error) {
@@ -245,34 +141,36 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
       alert("댓글 수정 중 오류가 발생했습니다.");
     } else {
       setEditingCommentId(null);
-      fetchComments(); // Refresh comments after editing
+      fetchComments();
     }
-  }
+  };
 
-  async function handleCommentDelete(commentId) {
-    if (window.confirm("정말로 이 댓글을 삭제하시겠습니까?")) {
-      const { error } = await supabase
-        .from("comments")
-        .delete()
-        .eq("id", commentId);
+  const handleCommentDelete = async (commentId) => {
+    if (!window.confirm("정말로 이 댓글을 삭제하시겠습니까?")) return;
 
-      if (error) {
-        console.error("Error deleting comment:", error);
-        alert("댓글 삭제 중 오류가 발생했습니다.");
-      } else {
-        fetchComments(); // Refresh comments after deleting
-      }
+    const { error } = await supabase
+      .from("comments")
+      .delete()
+      .eq("id", commentId);
+
+    if (error) {
+      console.error("Error deleting comment:", error);
+      alert("댓글 삭제 중 오류가 발생했습니다.");
+    } else {
+      fetchComments();
     }
-  }
+  };
 
-  async function handleRecycle(e) {
+  const handleRecycle = async (e) => {
     e.preventDefault();
-    const { data, error } = await supabase.from("cycles").insert({
+    const trimmed = recycleContent.trim();
+    if (!trimmed) return;
+
+    const { error } = await supabase.from("cycles").insert({
       user_id: currentUser.id,
-      reflection: recycleContent,
+      reflection: trimmed,
       recycled_from: cycle.id,
       type: "cycle",
-      // Add other necessary fields
     });
 
     if (error) {
@@ -281,98 +179,25 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
     } else {
       setIsRecycleDialogOpen(false);
       setRecycleContent("");
-      // Optionally, you can refresh the cycles list or add the new cycle to the existing list
-
-      if (onRecycle) {
-        onRecycle();
-      }
+      onRecycle?.();
     }
-  }
-
-  function formatDate(date) {
-    return formatDistanceToNow(new Date(date), { addSuffix: true, locale: ko });
-  }
+  };
 
   return (
     <Card className="mb-6 hover:shadow-lg transition-shadow duration-200">
       <CardHeader className="pb-3">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12">
-              <Jazzicon diameter={48} seed={seed} />
-            </div>
-            <div>
-              <CardTitle className="text-xl">{username}</CardTitle>
-              <p className="text-sm text-gray-500">
-                {formatDate(cycle.created_at)}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            {cycle.medium && (
-              <span className="text-base font-semibold bg-blue-100 text-blue-800 px-4 py-2 rounded-full border border-blue-300 shadow-sm">
-                {cycle.medium}
-              </span>
-            )}
-            {currentUser.id === cycle.user_id && (
-              <DropdownMenu.Root>
-                <DropdownMenu.Trigger asChild>
-                  <Button variant="ghost" className="h-8 w-8 p-0">
-                    <MoreVertical className="h-5 w-5" />
-                  </Button>
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Content
-                  className="w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                  align="end"
-                >
-                  <DropdownMenu.Item
-                    onSelect={() => setIsEditing(true)}
-                    className="flex items-center p-2 cursor-pointer hover:bg-gray-100"
-                  >
-                    <Edit className="mr-2 h-4 w-4" />
-                    <span>수정</span>
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Item
-                    onSelect={handleDelete}
-                    className="flex items-center p-2 cursor-pointer hover:bg-gray-100 text-red-600"
-                  >
-                    <Trash className="mr-2 h-4 w-4" />
-                    <span>삭제</span>
-                  </DropdownMenu.Item>
-                </DropdownMenu.Content>
-              </DropdownMenu.Root>
-            )}
-          </div>
-        </div>
+        <Header
+          username={username}
+          createdAt={cycle.created_at}
+          medium={cycle.medium}
+          isOwner={currentUser.id === cycle.user_id}
+          onEdit={() => setIsEditing(true)}
+          onDelete={handleDelete}
+        />
       </CardHeader>
       <CardContent>
         {cycle.type === "event" ? (
-          <div className="bg-gray-100 rounded-lg p-4 mt-4">
-            <h4 className="text-xl font-bold mb-2">
-              {cycle.event_description}
-            </h4>
-            <div className="space-y-2 text-sm text-gray-600">
-              <div className="flex items-center mt-4">
-                <CalendarIcon className="w-5 h-5 mr-2" />
-                <span>
-                  {format(new Date(cycle.event_date), "PPP", { locale: ko })}
-                </span>
-              </div>
-              <div className="flex items-center">
-                <ClockIcon className="w-5 h-5 mr-2" />
-                <span>
-                  {formatTime(cycle.event_start_time)} -{" "}
-                  {formatTime(cycle.event_end_time)}
-                </span>
-              </div>
-              {cycle.event_location && (
-                <div className="flex items-center">
-                  <MapPinIcon className="w-5 h-5 mr-2" />
-                  <span>{cycle.event_location}</span>
-                </div>
-              )}
-            </div>
-          </div>
+          <EventContent cycle={cycle} />
         ) : (
           <>
             {originalCycle && (
@@ -381,187 +206,397 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
               </div>
             )}
             {isEditing ? (
-              <div className="mb-4">
-                <Textarea
-                  value={editedReflection}
-                  onChange={(e) => setEditedReflection(e.target.value)}
-                  className="w-full p-2 border rounded"
-                  rows={4}
-                />
-                <div className="mt-2 space-x-2">
-                  <Button onClick={handleEditSubmit}>저장</Button>
-                  <Button variant="outline" onClick={() => setIsEditing(false)}>
-                    취소
-                  </Button>
-                </div>
-              </div>
+              <ReflectionEdit
+                editedReflection={editedReflection}
+                setEditedReflection={setEditedReflection}
+                handleEditSubmit={handleEditSubmit}
+                setIsEditing={setIsEditing}
+              />
             ) : (
-              <div className="mb-4">
-                <p className="text-lg text-gray-700 whitespace-pre-wrap">
-                  {linkifyText(cycle.reflection)}
-                </p>
-              </div>
+              <ReflectionDisplay reflection={cycle.reflection} />
             )}
-            <div className="mt-4 flex justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsRecycleDialogOpen(true)}
-                className="flex items-center space-x-2 text-green-600 border-green-300 hover:bg-green-50 hover:text-green-700 hover:border-green-400 transition-colors"
-              >
-                <Repeat className="h-4 w-4" />
-                <span>리사이클</span>
-              </Button>
-            </div>
+            <RecycleButton onOpen={() => setIsRecycleDialogOpen(true)} />
           </>
         )}
-        <div className="mt-6 space-y-4">
-          {comments.map((comment) => (
-            <div key={comment.id} className="bg-gray-50 p-3 rounded-lg">
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex flex-col w-full">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-semibold text-base">
-                      {comment.users.username}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      {formatDate(comment.created_at)}
-                    </span>
-                  </div>
-                  {editingCommentId === comment.id ? (
-                    <div className="mt-2 w-full">
-                      <textarea
-                        ref={editTextareaRef}
-                        value={editedCommentContent}
-                        onChange={(e) => {
-                          setEditedCommentContent(e.target.value);
-                          adjustTextareaHeight(editTextareaRef);
-                        }}
-                        className="w-full text-base p-2 border rounded resize-none overflow-hidden min-h-[40px]"
-                        rows={1}
-                      />
-                      <div className="mt-2 space-x-2">
-                        <Button
-                          onClick={() =>
-                            handleCommentEdit(comment.id, editedCommentContent)
-                          }
-                        >
-                          저장
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => setEditingCommentId(null)}
-                        >
-                          취소
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-base text-gray-700 mt-1">
-                      {linkifyText(comment.content)}
-                    </p>
-                  )}
-                </div>
-                {currentUser.id === comment.user_id && (
-                  <DropdownMenu.Root>
-                    <DropdownMenu.Trigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="h-8 w-8 p-0 hover:bg-gray-200 rounded-full"
-                      >
-                        <MoreVertical className="h-5 w-5" />
-                      </Button>
-                    </DropdownMenu.Trigger>
-                    <DropdownMenu.Content
-                      className="w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                      align="end"
-                    >
-                      <DropdownMenu.Item
-                        onSelect={() => {
-                          setEditingCommentId(comment.id);
-                          setEditedCommentContent(comment.content);
-                        }}
-                        className="flex items-center p-2 cursor-pointer hover:bg-gray-100"
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        <span>수정</span>
-                      </DropdownMenu.Item>
-                      <DropdownMenu.Item
-                        onSelect={() => handleCommentDelete(comment.id)}
-                        className="flex items-center p-2 cursor-pointer hover:bg-gray-100 text-red-600"
-                      >
-                        <Trash className="mr-2 h-4 w-4" />
-                        <span>삭제</span>
-                      </DropdownMenu.Item>
-                    </DropdownMenu.Content>
-                  </DropdownMenu.Root>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        <CommentsSection
+          comments={comments}
+          currentUser={currentUser}
+          editingCommentId={editingCommentId}
+          setEditingCommentId={setEditingCommentId}
+          editedCommentContent={editedCommentContent}
+          setEditedCommentContent={setEditedCommentContent}
+          handleCommentEdit={handleCommentEdit}
+          handleCommentDelete={handleCommentDelete}
+          adjustTextareaHeight={adjustTextareaHeight}
+        />
       </CardContent>
       <CardFooter>
-        <form onSubmit={handleCommentSubmit} className="w-full flex space-x-2">
-          <textarea
-            ref={textareaRef}
-            placeholder="댓글을 입력하세요..."
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            className="flex-grow text-base p-2 border rounded resize-none overflow-hidden min-h-[40px]"
-            rows={1}
-          />
-          <Button
-            type="submit"
-            disabled={isCommenting || !newComment.trim()}
-            className="text-base"
-          >
-            {isCommenting ? "작성 중..." : "댓글"}
-          </Button>
-        </form>
+        <CommentForm
+          newComment={newComment}
+          setNewComment={setNewComment}
+          isCommenting={isCommenting}
+          handleCommentSubmit={handleCommentSubmit}
+          textareaRef={textareaRef}
+          adjustTextareaHeight={adjustTextareaHeight}
+        />
       </CardFooter>
       {cycle.type !== "event" && (
-        <Dialog
-          open={isRecycleDialogOpen}
-          onOpenChange={setIsRecycleDialogOpen}
-        >
-          <DialogContent className="sm:max-w-[525px]">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-semibold">
-                리사이클
-              </DialogTitle>
-              <DialogDescription className="text-base">
-                이 사이클에서 어떤 배움이 발견되었나요?
-              </DialogDescription>
-            </DialogHeader>
-            <div className="mt-2">
-              <MiniCycleCard cycle={cycle} clickable={false} />
-            </div>
-            <form onSubmit={handleRecycle} className="mt-2">
-              <Textarea
-                className="mt-4 text-base"
-                placeholder="해당 사이클에서 발견한 배움을 작성해주세요..."
-                value={recycleContent}
-                onChange={(e) => setRecycleContent(e.target.value)}
-                rows={4}
-              />
-              <div className="mt-6 flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsRecycleDialogOpen(false)}
-                  className="text-base"
-                >
-                  취소
-                </Button>
-                <Button type="submit" className="text-base">
-                  리사이클
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <RecycleDialog
+          isOpen={isRecycleDialogOpen}
+          onClose={setIsRecycleDialogOpen}
+          recycleContent={recycleContent}
+          setRecycleContent={setRecycleContent}
+          handleRecycle={handleRecycle}
+          cycle={cycle}
+        />
       )}
     </Card>
   );
 }
+
+// Header Component
+const Header = ({ username, createdAt, medium, isOwner, onEdit, onDelete }) => (
+  <div className="flex justify-between items-center">
+    <div className="flex items-center space-x-3">
+      <UserAvatar username={username} size={48} />
+      <div>
+        <CardTitle className="text-xl">{username}</CardTitle>
+        <p className="text-sm text-gray-500">{getRelativeTime(createdAt)}</p>
+      </div>
+    </div>
+    <div className="flex items-center space-x-2">
+      {medium && (
+        <span className="text-base font-semibold bg-blue-100 text-blue-800 px-4 py-2 rounded-full border border-blue-300 shadow-sm">
+          {medium}
+        </span>
+      )}
+      {isOwner && (
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <MoreVertical className="h-5 w-5" />
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content
+            className="w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+            align="end"
+          >
+            <DropdownMenu.Item
+              onSelect={onEdit}
+              className="flex items-center p-2 cursor-pointer hover:bg-gray-100"
+            >
+              <Edit className="mr-2 h-4 w-4" />
+              <span>수정</span>
+            </DropdownMenu.Item>
+            <DropdownMenu.Item
+              onSelect={onDelete}
+              className="flex items-center p-2 cursor-pointer hover:bg-gray-100 text-red-600"
+            >
+              <Trash className="mr-2 h-4 w-4" />
+              <span>삭제</span>
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+      )}
+    </div>
+  </div>
+);
+
+// EventContent Component
+const EventContent = ({ cycle }) => (
+  <div className="bg-gray-100 rounded-lg p-4 mt-4">
+    <h4 className="text-xl font-bold mb-2">{cycle.event_description}</h4>
+    <div className="space-y-2 text-sm text-gray-600">
+      <div className="flex items-center mt-4">
+        <CalendarIcon className="w-5 h-5 mr-2" />
+        <span>{getRelativeTime(cycle.event_date)}</span>
+      </div>
+      <div className="flex items-center">
+        <ClockIcon className="w-5 h-5 mr-2" />
+        <span>
+          {cycle.event_start_time} - {cycle.event_end_time}
+        </span>
+      </div>
+      {cycle.event_location && (
+        <div className="flex items-center">
+          <MapPinIcon className="w-5 h-5 mr-2" />
+          <span>{cycle.event_location}</span>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+// ReflectionEdit Component
+const ReflectionEdit = ({
+  editedReflection,
+  setEditedReflection,
+  handleEditSubmit,
+  setIsEditing,
+}) => (
+  <div className="mb-4">
+    <Textarea
+      value={editedReflection}
+      onChange={(e) => setEditedReflection(e.target.value)}
+      className="w-full p-2 border rounded"
+      rows={4}
+    />
+    <div className="mt-2 space-x-2">
+      <Button onClick={handleEditSubmit}>저장</Button>
+      <Button variant="outline" onClick={() => setIsEditing(false)}>
+        취소
+      </Button>
+    </div>
+  </div>
+);
+
+// ReflectionDisplay Component
+const ReflectionDisplay = ({ reflection }) => (
+  <div className="mb-4">
+    <p className="text-lg text-gray-700 whitespace-pre-wrap">
+      {linkifyText(reflection)}
+    </p>
+  </div>
+);
+
+// RecycleButton Component
+const RecycleButton = ({ onOpen }) => (
+  <div className="mt-4 flex justify-end">
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={onOpen}
+      className="flex items-center space-x-2 text-green-600 border-green-300 hover:bg-green-50 hover:text-green-700 hover:border-green-400 transition-colors"
+    >
+      <Repeat className="h-4 w-4" />
+      <span>리사이클</span>
+    </Button>
+  </div>
+);
+
+// CommentsSection Component
+const CommentsSection = ({
+  comments,
+  currentUser,
+  editingCommentId,
+  setEditingCommentId,
+  editedCommentContent,
+  setEditedCommentContent,
+  handleCommentEdit,
+  handleCommentDelete,
+  adjustTextareaHeight,
+}) => (
+  <div className="mt-6 space-y-4">
+    {comments.map((comment) => (
+      <Comment
+        key={comment.id}
+        comment={comment}
+        currentUser={currentUser}
+        isEditing={editingCommentId === comment.id}
+        editedCommentContent={editedCommentContent}
+        setEditedCommentContent={setEditedCommentContent}
+        onEdit={() => {
+          setEditingCommentId(comment.id);
+          setEditedCommentContent(comment.content);
+        }}
+        onDelete={() => handleCommentDelete(comment.id)}
+        handleCommentEdit={handleCommentEdit}
+        adjustTextareaHeight={adjustTextareaHeight}
+      />
+    ))}
+  </div>
+);
+
+// Comment Component
+const Comment = ({
+  comment,
+  currentUser,
+  isEditing,
+  editedCommentContent,
+  setEditedCommentContent,
+  onEdit,
+  onDelete,
+  handleCommentEdit,
+  adjustTextareaHeight,
+}) => (
+  <div className="bg-gray-50 p-3 rounded-lg">
+    <div className="flex justify-between items-start mb-2">
+      <div className="flex flex-col w-full">
+        <div className="flex items-center space-x-2">
+          <span className="font-semibold text-base">
+            {comment.users.username}
+          </span>
+          <span className="text-sm text-gray-500">
+            {getRelativeTime(comment.created_at)}
+          </span>
+        </div>
+        {isEditing ? (
+          <EditComment
+            editedCommentContent={editedCommentContent}
+            setEditedCommentContent={setEditedCommentContent}
+            handleCommentEdit={handleCommentEdit}
+            commentId={comment.id}
+            adjustTextareaHeight={adjustTextareaHeight}
+            onCancel={() => setEditingCommentId(null)}
+          />
+        ) : (
+          <p className="text-base text-gray-700 mt-1">
+            {linkifyText(comment.content)}
+          </p>
+        )}
+      </div>
+      {currentUser.id === comment.user_id && (
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <Button
+              variant="ghost"
+              className="h-8 w-8 p-0 hover:bg-gray-200 rounded-full"
+            >
+              <MoreVertical className="h-5 w-5" />
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content
+            className="w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+            align="end"
+          >
+            <DropdownMenu.Item
+              onSelect={onEdit}
+              className="flex items-center p-2 cursor-pointer hover:bg-gray-100"
+            >
+              <Edit className="mr-2 h-4 w-4" />
+              <span>수정</span>
+            </DropdownMenu.Item>
+            <DropdownMenu.Item
+              onSelect={onDelete}
+              className="flex items-center p-2 cursor-pointer hover:bg-gray-100 text-red-600"
+            >
+              <Trash className="mr-2 h-4 w-4" />
+              <span>삭제</span>
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+      )}
+    </div>
+  </div>
+);
+
+// EditComment Component
+const EditComment = ({
+  editedCommentContent,
+  setEditedCommentContent,
+  handleCommentEdit,
+  commentId,
+  adjustTextareaHeight,
+  onCancel,
+}) => {
+  const editTextareaRef = useRef(null);
+
+  useEffect(() => {
+    adjustTextareaHeight(editTextareaRef);
+  }, [editedCommentContent, adjustTextareaHeight]);
+
+  return (
+    <div className="mt-2 w-full">
+      <Textarea
+        ref={editTextareaRef}
+        value={editedCommentContent}
+        onChange={(e) => {
+          setEditedCommentContent(e.target.value);
+          adjustTextareaHeight(editTextareaRef);
+        }}
+        className="w-full text-base p-2 border rounded resize-none overflow-hidden min-h-[40px]"
+        rows={1}
+      />
+      <div className="mt-2 space-x-2">
+        <Button
+          onClick={() => handleCommentEdit(commentId, editedCommentContent)}
+        >
+          저장
+        </Button>
+        <Button variant="outline" onClick={onCancel}>
+          취소
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+// CommentForm Component
+const CommentForm = ({
+  newComment,
+  setNewComment,
+  isCommenting,
+  handleCommentSubmit,
+  textareaRef,
+  adjustTextareaHeight,
+}) => {
+  useEffect(() => {
+    adjustTextareaHeight(textareaRef);
+  }, [newComment, adjustTextareaHeight, textareaRef]);
+
+  return (
+    <form onSubmit={handleCommentSubmit} className="w-full flex space-x-2">
+      <Textarea
+        ref={textareaRef}
+        placeholder="댓글을 입력하세요..."
+        value={newComment}
+        onChange={(e) => setNewComment(e.target.value)}
+        className="flex-grow text-base p-2 border rounded resize-none overflow-hidden min-h-[40px]"
+        rows={1}
+      />
+      <Button
+        type="submit"
+        disabled={isCommenting || !newComment.trim()}
+        className="text-base"
+      >
+        {isCommenting ? "작성 중..." : "댓글"}
+      </Button>
+    </form>
+  );
+};
+
+// RecycleDialog Component
+const RecycleDialog = ({
+  isOpen,
+  onClose,
+  recycleContent,
+  setRecycleContent,
+  handleRecycle,
+  cycle,
+}) => (
+  <Dialog open={isOpen} onOpenChange={onClose}>
+    <DialogContent className="sm:max-w-[525px]">
+      <DialogHeader>
+        <DialogTitle className="text-2xl font-semibold">리사이클</DialogTitle>
+        <DialogDescription className="text-base">
+          이 사이클에서 어떤 배움이 발견되었나요?
+        </DialogDescription>
+      </DialogHeader>
+      <div className="mt-2">
+        <MiniCycleCard cycle={cycle} clickable={false} />
+      </div>
+      <form onSubmit={handleRecycle} className="mt-2">
+        <Textarea
+          className="mt-4 text-base"
+          placeholder="해당 사이클에서 발견한 배움을 작성해주세요..."
+          value={recycleContent}
+          onChange={(e) => setRecycleContent(e.target.value)}
+          rows={4}
+        />
+        <div className="mt-6 flex justify-end space-x-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onClose(false)}
+            className="text-base"
+          >
+            취소
+          </Button>
+          <Button type="submit" className="text-base">
+            리사이클
+          </Button>
+        </div>
+      </form>
+    </DialogContent>
+  </Dialog>
+);

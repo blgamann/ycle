@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { UserAvatar } from "./UserAvatar";
-import { getRelativeTime } from "../lib/utils";
+import { getRelativeTime } from "../utils/date";
 
 export function MiniCycleCard({ cycle, clickable = true }) {
   const username = cycle.users?.username || "알 수 없는 사용자";
