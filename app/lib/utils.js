@@ -1,14 +1,14 @@
 import { format, formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 
-export function formatDate(date) {
+export function formatFullDate(date) {
   return format(new Date(date), "PPP", { locale: ko });
 }
 
-export function formatTime(date) {
+export function formatTimeOfDay(date) {
   return format(new Date(date), "p", { locale: ko });
 }
 
-export function getRelativeTimeString(date) {
+export function getRelativeTime(date) {
   return formatDistanceToNow(new Date(date), { addSuffix: true, locale: ko });
 }
