@@ -19,44 +19,225 @@ import {
 } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 
+const FormGroup = ({ label, htmlFor, error, children }) => (
+  <div className="space-y-2">
+    {label && <Label htmlFor={htmlFor}>{label}</Label>}
+    {children}
+    {error && <p className="text-red-500 text-sm">{error}</p>}
+  </div>
+);
+
+const TimeInput = ({ id, label, value, onChange, error }) => (
+  <FormGroup label={label} htmlFor={id} error={error}>
+    <Input
+      id={id}
+      type="time"
+      value={value}
+      onChange={onChange}
+      aria-invalid={!!error}
+      aria-describedby={error ? `${id}-error` : undefined}
+    />
+  </FormGroup>
+);
+
+const EventForm = ({ formState, handleChange, handleSubmit, errors, user }) => (
+  <form onSubmit={handleSubmit} className="space-y-4">
+    {errors.submit && (
+      <p className="text-red-500 text-sm" role="alert">
+        {errors.submit}
+      </p>
+    )}
+
+    <FormGroup
+      label="설명"
+      htmlFor="cycleDescription"
+      error={errors.cycleDescription}
+    >
+      <Textarea
+        id="cycleDescription"
+        value={formState.cycleDescription}
+        onChange={(e) => handleChange("cycleDescription", e.target.value)}
+        placeholder="무엇을 하시나요?"
+        className="min-h-[100px]"
+        aria-invalid={!!errors.cycleDescription}
+        aria-describedby={
+          errors.cycleDescription ? "cycleDescription-error" : undefined
+        }
+      />
+    </FormGroup>
+
+    <FormGroup
+      label="미디엄 선택"
+      htmlFor="cycleMedium"
+      error={errors.newCycleMedium}
+    >
+      <Select
+        onValueChange={(value) => handleChange("newCycleMedium", value)}
+        value={formState.newCycleMedium}
+      >
+        <SelectTrigger className="w-full" aria-label="미디엄 선택">
+          <SelectValue placeholder="미디엄 선택" />
+        </SelectTrigger>
+        <SelectContent>
+          {user.medium &&
+            user.medium.map((med, index) => (
+              <SelectItem key={index} value={med}>
+                {med}
+              </SelectItem>
+            ))}
+        </SelectContent>
+      </Select>
+    </FormGroup>
+
+    <FormGroup label="일자" htmlFor="eventDate" error={errors.newCycleDate}>
+      <div className="flex justify-center">
+        <Calendar
+          mode="single"
+          selected={formState.newCycleDate}
+          onSelect={(date) => handleChange("newCycleDate", date)}
+          className="rounded-md border mx-auto w-full max-w-[300px]"
+          aria-label="일자 선택"
+        />
+      </div>
+    </FormGroup>
+
+    <FormGroup label="" error={errors.time}>
+      <div className="flex flex-col sm:flex-row sm:space-x-4">
+        <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <TimeInput
+            id="startTime"
+            label="시작 시간"
+            value={formState.startTime}
+            onChange={(e) => handleChange("startTime", e.target.value)}
+            error={errors.startTime}
+            className="w-full aspect-square"
+          />
+          <TimeInput
+            id="endTime"
+            label="종료 시간"
+            value={formState.endTime}
+            onChange={(e) => handleChange("endTime", e.target.value)}
+            error={errors.endTime}
+            className="w-full aspect-square"
+          />
+        </div>
+      </div>
+    </FormGroup>
+
+    <FormGroup
+      label="장소"
+      htmlFor="cycleLocation"
+      error={errors.newCycleLocation}
+    >
+      <Input
+        id="cycleLocation"
+        value={formState.newCycleLocation}
+        onChange={(e) => handleChange("newCycleLocation", e.target.value)}
+        placeholder="장소를 입력하세요"
+        aria-invalid={!!errors.newCycleLocation}
+        aria-describedby={
+          errors.newCycleLocation ? "cycleLocation-error" : undefined
+        }
+      />
+    </FormGroup>
+
+    <div className="flex justify-end pt-4">
+      <Button type="submit" className="text-base">
+        만들기
+      </Button>
+    </div>
+  </form>
+);
+
 export function EventDialog({ user, onSubmit }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [cycleDescription, setCycleDescription] = useState("");
-  const [newCycleMedium, setNewCycleMedium] = useState("");
-  const [newCycleDate, setNewCycleDate] = useState(new Date());
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("17:00");
-  const [newCycleLocation, setNewCycleLocation] = useState("");
+  const [formState, setFormState] = useState({
+    cycleDescription: "",
+    newCycleMedium: "",
+    newCycleDate: new Date(),
+    startTime: "09:00",
+    endTime: "17:00",
+    newCycleLocation: "",
+  });
   const [errors, setErrors] = useState({});
 
-  const handleSubmit = (e) => {
+  const handleOpenChange = (open) => {
+    setIsOpen(open);
+    if (open) {
+      setFormState((prevState) => ({
+        ...prevState,
+        newCycleMedium: "",
+      }));
+      setErrors({});
+    }
+  };
+
+  const handleChange = (key, value) => {
+    setFormState((prevState) => ({
+      ...prevState,
+      [key]: value,
+    }));
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formState.cycleDescription.trim()) {
+      newErrors.cycleDescription = "설명을 입력하세요.";
+    }
+    if (!formState.newCycleDate) {
+      newErrors.newCycleDate = "일자를 선택하세요.";
+    }
+    if (!formState.startTime || !formState.endTime) {
+      newErrors.time = "시작 및 종료 시간을 입력하세요.";
+    } else if (formState.endTime <= formState.startTime) {
+      newErrors.time = "종료 시간은 시작 시간보다 늦어야 합니다.";
+    }
+    if (!formState.newCycleLocation.trim()) {
+      newErrors.newCycleLocation = "장소를 입력하세요.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmitForm = (e) => {
     e.preventDefault();
-    // Here you can add validation logic
+    if (!validateForm()) return;
+
     onSubmit({
-      event_description: cycleDescription,
-      medium: newCycleMedium === "없음" ? null : newCycleMedium,
-      event_date: newCycleDate,
-      event_start_time: startTime,
-      event_end_time: endTime,
-      event_location: newCycleLocation,
+      event_description: formState.cycleDescription,
+      medium:
+        formState.newCycleMedium === "없음" ? null : formState.newCycleMedium,
+      event_date: formState.newCycleDate,
+      event_start_time: formState.startTime,
+      event_end_time: formState.endTime,
+      event_location: formState.newCycleLocation,
     });
+
+    resetForm();
     setIsOpen(false);
-    // Reset form
-    setCycleDescription("");
-    setNewCycleMedium("");
-    setNewCycleDate(new Date());
-    setStartTime("09:00");
-    setEndTime("17:00");
-    setNewCycleLocation("");
+  };
+
+  const resetForm = () => {
+    setFormState({
+      cycleDescription: "",
+      newCycleMedium: "",
+      newCycleDate: new Date(),
+      startTime: "09:00",
+      endTime: "17:00",
+      newCycleLocation: "",
+    });
     setErrors({});
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
           variant="outline"
           className="ml-4 bg-primary text-white hover:bg-primary/90 rounded-full w-16 h-16 flex items-center justify-center"
+          aria-label="새 사이클 계획"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -80,110 +261,13 @@ export function EventDialog({ user, onSubmit }) {
             사이클 일정 생성
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {errors.submit && (
-            <p className="text-red-500 text-sm">{errors.submit}</p>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="cycleDescription">설명</Label>
-            <Textarea
-              id="cycleDescription"
-              value={cycleDescription}
-              onChange={(e) => setCycleDescription(e.target.value)}
-              placeholder="무엇을 하시나요?"
-              className="min-h-[100px]"
-            />
-            {errors.cycleDescription && (
-              <p className="text-red-500 text-sm">{errors.cycleDescription}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="cycleMedium">미디엄 선택</Label>
-            <Select onValueChange={setNewCycleMedium} value={newCycleMedium}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="미디엄 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                {user.medium &&
-                  user.medium.map((med, index) => (
-                    <SelectItem key={index} value={med}>
-                      {med}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-            {errors.newCycleMedium && (
-              <p className="text-red-500 text-sm">{errors.newCycleMedium}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label>일자</Label>
-            <div className="flex justify-center">
-              <Calendar
-                mode="single"
-                selected={newCycleDate}
-                onSelect={setNewCycleDate}
-                className="rounded-md border mx-auto w-full max-w-[300px]"
-              />
-            </div>
-            {errors.newCycleDate && (
-              <p className="text-red-500 text-sm">{errors.newCycleDate}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex flex-col sm:flex-row sm:space-x-4">
-              <div className="flex-1 space-y-2 mb-2 sm:mb-0">
-                <Label htmlFor="startTime">시작 시간</Label>
-                <Input
-                  id="startTime"
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                />
-                {errors.startTime && (
-                  <p className="text-red-500 text-sm">{errors.startTime}</p>
-                )}
-              </div>
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="endTime">종료 시간</Label>
-                <Input
-                  id="endTime"
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                />
-                {errors.endTime && (
-                  <p className="text-red-500 text-sm">{errors.endTime}</p>
-                )}
-              </div>
-            </div>
-            {errors.time && (
-              <p className="text-red-500 text-sm">{errors.time}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="cycleLocation">장소</Label>
-            <Input
-              id="cycleLocation"
-              value={newCycleLocation}
-              onChange={(e) => setNewCycleLocation(e.target.value)}
-              placeholder="장소를 입력하세요"
-            />
-            {errors.newCycleLocation && (
-              <p className="text-red-500 text-sm">{errors.newCycleLocation}</p>
-            )}
-          </div>
-
-          <div className="flex justify-end pt-4">
-            <Button type="submit" className="text-base">
-              만들기
-            </Button>
-          </div>
-        </form>
+        <EventForm
+          formState={formState}
+          handleChange={handleChange}
+          handleSubmit={handleSubmitForm}
+          errors={errors}
+          user={user}
+        />
       </DialogContent>
     </Dialog>
   );
