@@ -42,7 +42,7 @@ export default function CyclePage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+    <div className="w-full max-w-3xl mx-auto px-4 py-8">
       <button
         onClick={() => router.back()}
         className="mb-4 flex items-center text-blue-500 hover:text-blue-700"

@@ -48,7 +48,7 @@ export function MiniCycleCard({ cycle, clickable = true }) {
   );
 
   if (clickable) {
-    return <Link href={`/${cycle.user_id}/${cycle.id}`}>{content}</Link>;
+    return <Link href={`/cycles/${cycle.id}`}>{content}</Link>;
   }
 
   return content;
