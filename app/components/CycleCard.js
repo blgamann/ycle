@@ -36,6 +36,7 @@ import Image from "next/image";
 import { useComments } from "../hooks/useComments";
 import { useOriginalCycle } from "../hooks/useOriginalCycle";
 import { useLikes } from "../hooks/useLikes";
+import Link from "next/link";
 
 // Main CycleCard Component
 export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
@@ -192,8 +193,9 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   return (
     <Card className="mb-6 hover:shadow-lg transition-shadow duration-200">
       <CardHeader className="pb-3">
-        <Header
+        <CycleHeader
           username={username}
+          cycleId={cycle.id}
           createdAt={cycle.created_at}
           medium={cycle.medium}
           isOwner={currentUser.id === cycle.user_id}
@@ -278,14 +280,26 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   );
 }
 
-// Header Component
-const Header = ({ username, createdAt, medium, isOwner, onEdit, onDelete }) => (
+// CycleHeader Component
+const CycleHeader = ({
+  username,
+  cycleId,
+  createdAt,
+  medium,
+  isOwner,
+  onEdit,
+  onDelete,
+}) => (
   <div className="flex justify-between items-center">
     <div className="flex items-center space-x-3">
       <UserAvatar username={username} size={48} />
       <div>
-        <CardTitle className="text-xl">{username}</CardTitle>
-        <p className="text-sm text-gray-500">{getRelativeTime(createdAt)}</p>
+        <Link href={`/${username}`} className="hover:underline">
+          <CardTitle className="text-xl cursor-pointer">{username}</CardTitle>
+        </Link>
+        <Link href={`/cycles/${cycleId}`} className="hover:underline">
+          <p className="text-sm text-gray-500">{getRelativeTime(createdAt)}</p>
+        </Link>
       </div>
     </div>
     <div className="flex items-center space-x-2">
@@ -614,9 +628,6 @@ const RecycleDialog = ({
           이 사이클에서 어떤 배움이 발견되었나요?
         </DialogDescription>
       </DialogHeader>
-      <div className="mt-2">
-        <MiniCycleCard cycle={cycle} clickable={false} />
-      </div>
       <form onSubmit={handleRecycle} className="mt-2">
         <Textarea
           className="mt-4 text-base"
@@ -625,6 +636,9 @@ const RecycleDialog = ({
           onChange={(e) => setRecycleContent(e.target.value)}
           rows={4}
         />
+        <div className="mt-2">
+          <MiniCycleCard cycle={cycle} clickable={false} />
+        </div>
         <div className="mt-6 flex justify-end space-x-2">
           <Button
             type="button"

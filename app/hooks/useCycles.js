@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { useInView } from "react-intersection-observer";
 
-export function useCycles({ isLoggedIn, user }) {
+export function useCycles({ isLoggedIn, user, username }) {
   const [cycles, setCycles] = useState([]);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,7 +24,7 @@ export function useCycles({ isLoggedIn, user }) {
       pageRef.current = 0;
       fetchCycles(true);
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, username]);
 
   useEffect(() => {
     if (!initialLoadComplete || !isLoggedIn) return;
@@ -45,14 +45,33 @@ export function useCycles({ isLoggedIn, user }) {
       const from = newPage * pageSize;
       const to = from + pageSize - 1;
 
-      console.log("fetchCycles", newPage, from, to);
-
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from("cycles")
-          .select(`*, users:user_id (id, username, medium)`)
+          .select(
+            `
+            *,
+            users:user_id (id, username, medium)
+          `
+          )
           .order("created_at", { ascending: false })
           .range(from, to);
+
+        if (username) {
+          // First, get the user_id for the given username
+          const { data: userData, error: userError } = await supabase
+            .from("users")
+            .select("id")
+            .eq("username", username)
+            .single();
+
+          if (userError) throw userError;
+
+          // Then use the user_id to filter cycles
+          query = query.eq("user_id", userData.id);
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
 
@@ -78,7 +97,7 @@ export function useCycles({ isLoggedIn, user }) {
         setIsLoading(false);
       }
     },
-    [] // Empty dependency array
+    [username]
   );
 
   const addCycle = useCallback((newCycle) => {

@@ -1,12 +1,14 @@
 "use client";
 import { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import { useRouter } from "next/navigation";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+  const router = useRouter();
 
   useEffect(() => {
     checkUser();
@@ -43,6 +45,7 @@ export function AuthProvider({ children }) {
   }
 
   function handleLogout() {
+    router.push("/");
     setIsLoggedIn(false);
     setUser(null);
     localStorage.removeItem("user");
