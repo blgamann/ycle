@@ -31,6 +31,7 @@ import {
 import { MiniCycleCard } from "./MiniCycleCard";
 import { UserAvatar } from "./UserAvatar";
 import { linkifyText } from "../utils/url";
+import Image from "next/image";
 
 import { useComments } from "../hooks/useComments";
 import { useOriginalCycle } from "../hooks/useOriginalCycle";
@@ -218,6 +219,19 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
               />
             ) : (
               <ReflectionDisplay reflection={cycle.reflection} />
+            )}
+            {cycle.img_url && (
+              <div className="mt-4 mb-4">
+                <Image
+                  src={cycle.img_url}
+                  alt="Cycle image"
+                  width={500}
+                  height={300}
+                  layout="responsive"
+                  objectFit="cover"
+                  className="rounded-lg"
+                />
+              </div>
             )}
             <ActionButtons
               likeCount={likeCount}
