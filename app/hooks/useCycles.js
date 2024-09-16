@@ -85,7 +85,7 @@ export function useCycles({ isLoggedIn, user }) {
     setCycles((prevCycles) => [newCycle, ...prevCycles]);
   }, []);
 
-  const handleCycleSubmit = async ({ reflection, medium }) => {
+  const handleCycleSubmit = async ({ reflection, medium, imgUrl }) => {
     const { data, error } = await supabase
       .from("cycles")
       .insert({
@@ -93,6 +93,7 @@ export function useCycles({ isLoggedIn, user }) {
         type: "cycle",
         medium: medium,
         reflection: reflection,
+        img_url: imgUrl,
       })
       .select("*, users:user_id (id, username, medium)");
 

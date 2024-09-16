@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "../lib/supabase";
+import { deleteImage, supabase } from "../lib/supabase";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   MoreVertical,
@@ -124,9 +124,14 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
       console.error("Error deleting cycle:", error);
       alert("삭제 중 오류가 발생했습니다.");
     } else {
+      if (cycle.img_url) {
+        await deleteImage(cycle.img_url);
+      }
+
       onDelete(cycle.id);
     }
   };
+
   const handleCommentEdit = async (commentId, newContent) => {
     const trimmed = newContent.trim();
     if (!trimmed) return;
@@ -257,6 +262,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
     </Card>
   );
 }
+
 // Header Component
 const Header = ({ username, createdAt, medium, isOwner, onEdit, onDelete }) => (
   <div className="flex justify-between items-center">
@@ -352,6 +358,7 @@ const ReflectionEdit = ({
     </div>
   </div>
 );
+
 // ReflectionDisplay Component
 const ReflectionDisplay = ({ reflection }) => (
   <div className="mb-4">
@@ -426,6 +433,7 @@ const CommentsSection = ({
     ))}
   </div>
 );
+
 // Comment Component
 const Comment = ({
   comment,
@@ -573,6 +581,7 @@ const CommentForm = ({
     </form>
   );
 };
+
 // RecycleDialog Component
 const RecycleDialog = ({
   isOpen,
