@@ -6,8 +6,12 @@ export function useLikes(cycleId, userId) {
   const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
-    fetchLikeCount();
-    checkIfLiked();
+    if (cycleId) {
+      fetchLikeCount();
+      if (userId) {
+        checkIfLiked();
+      }
+    }
   }, [cycleId, userId]);
 
   async function fetchLikeCount() {
@@ -24,17 +28,21 @@ export function useLikes(cycleId, userId) {
   }
 
   async function checkIfLiked() {
+    if (!userId) {
+      setIsLiked(false);
+      return;
+    }
+
     const { data, error } = await supabase
       .from("likes")
       .select("*")
       .eq("cycle_id", cycleId)
-      .eq("user_id", userId)
-      .single(); // When data is not found (0 row), error is populated
+      .eq("user_id", userId);
 
     if (error) {
       console.error("Error checking if liked:", error);
     } else {
-      setIsLiked(!!data);
+      setIsLiked(data.length > 0);
     }
   }
 
