@@ -1,6 +1,8 @@
 import { CycleCard } from "./CycleCard";
 
 export function CycleList({ cycles, currentUser, onDelete, onRecycle }) {
+  if (!currentUser) return null;
+
   return (
     <>
       {cycles.length > 0 ? (

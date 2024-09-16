@@ -10,6 +10,7 @@ export default function CyclePage() {
   const router = useRouter();
   const [cycle, setCycle] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [cycleNotFound, setCycleNotFound] = useState(false);
 
   useEffect(() => {
     async function fetchCycle() {
@@ -20,8 +21,10 @@ export default function CyclePage() {
         .single();
 
       if (error) {
+        setCycleNotFound(true);
         console.error("Error fetching cycle:", error);
       } else {
+        setCycleNotFound(false);
         setCycle(data);
       }
     }
@@ -37,14 +40,28 @@ export default function CyclePage() {
     fetchCurrentUser();
   }, [params.cycle_id]);
 
-  if (!cycle) {
-    return <div>Loading...</div>;
+  if (cycleNotFound) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <button
+          onClick={() => router.push("/")}
+          className="mb-4 flex items-center text-blue-500 hover:text-blue-700"
+        >
+          <ArrowLeftIcon className="h-5 w-5 mr-2" />
+          Back
+        </button>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">사이클을 찾을 수 없습니다</h1>
+          <p>요청하신 사이클 "{params.cycle_id}"은(는) 존재하지 않습니다.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="w-full max-w-3xl mx-auto px-4 py-8">
       <button
-        onClick={() => router.back()}
+        onClick={() => router.push("/")}
         className="mb-4 flex items-center text-blue-500 hover:text-blue-700"
       >
         <ArrowLeftIcon className="h-5 w-5 mr-2" />

@@ -40,6 +40,8 @@ import Link from "next/link";
 
 // Main CycleCard Component
 export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
+  if (!cycle) return null;
+
   const [newComment, setNewComment] = useState("");
   const [isCommenting, setIsCommenting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -190,6 +192,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
       onRecycle?.();
     }
   };
+
   return (
     <Card className="mb-6 hover:shadow-lg transition-shadow duration-200">
       <CardHeader className="pb-3">

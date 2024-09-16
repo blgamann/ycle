@@ -2,6 +2,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { UserAvatar } from "./UserAvatar";
 
 export function UserCard({ user }) {
+  if (!user) return null;
+
   return (
     <Card className="bg-white border-2 border-primary shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardContent className="p-6">

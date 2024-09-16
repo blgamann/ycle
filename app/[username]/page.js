@@ -15,8 +15,9 @@ export default function UserPage() {
   const router = useRouter();
   const username = params.username;
 
-  const { isLoggedIn, user: currentUser } = useAuth();
+  const { isLoggedIn, user } = useAuth();
   const [pageUser, setPageUser] = useState(null);
+  const [userNotFound, setUserNotFound] = useState(false);
 
   const {
     cycles,
@@ -30,7 +31,7 @@ export default function UserPage() {
     initialLoadComplete,
   } = useCycles({
     isLoggedIn,
-    user: currentUser,
+    user,
     username,
   });
 
@@ -43,8 +44,10 @@ export default function UserPage() {
         .single();
 
       if (error) {
+        setUserNotFound(true);
         console.error("Error fetching user:", error);
       } else {
+        setUserNotFound(false);
         setPageUser(data);
       }
     }
@@ -52,27 +55,45 @@ export default function UserPage() {
     fetchPageUser();
   }, [username]);
 
-  if (!initialLoadComplete || !pageUser) return <div>로딩 중...</div>;
+  if (isLoading) return <div>로딩 중...</div>;
+
+  if (userNotFound) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <button
+          onClick={() => router.push("/")}
+          className="mb-4 flex items-center text-blue-500 hover:text-blue-700"
+        >
+          <ArrowLeftIcon className="h-5 w-5 mr-2" />
+          Back
+        </button>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">사용자를 찾을 수 없습니다</h1>
+          <p>요청하신 사용자 "{username}"은(는) 존재하지 않습니다.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <button
-        onClick={() => router.back()}
+        onClick={() => router.push("/")}
         className="mb-4 flex items-center text-blue-500 hover:text-blue-700"
       >
         <ArrowLeftIcon className="h-5 w-5 mr-2" />
         Back
       </button>
       <UserCard user={pageUser} />
-      {currentUser.username === username && (
+      {user && user.username === username && (
         <div className="flex items-center justify-between mt-4">
-          <RecordDialog user={currentUser} onSubmit={handleCycleSubmit} />
-          <EventDialog user={currentUser} onSubmit={handleEventSubmit} />
+          <RecordDialog user={user} onSubmit={handleCycleSubmit} />
+          <EventDialog user={user} onSubmit={handleEventSubmit} />
         </div>
       )}
       <div className="mt-4">
         <CycleList
-          currentUser={currentUser}
+          currentUser={user}
           cycles={cycles}
           onDelete={handleCycleDelete}
           onRecycle={handleRecycle}
