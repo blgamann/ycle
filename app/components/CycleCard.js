@@ -36,6 +36,7 @@ import Image from "next/image";
 import { useComments } from "../hooks/useComments";
 import { useOriginalCycle } from "../hooks/useOriginalCycle";
 import { useLikes } from "../hooks/useLikes";
+
 // Main CycleCard Component
 export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   const [newComment, setNewComment] = useState("");
@@ -205,11 +206,6 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
           <EventContent cycle={cycle} />
         ) : (
           <>
-            {originalCycle && (
-              <div className="mt-4 mb-4">
-                <MiniCycleCard cycle={originalCycle} />
-              </div>
-            )}
             {isEditing ? (
               <ReflectionEdit
                 editedReflection={editedReflection}
@@ -231,6 +227,11 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
                   objectFit="cover"
                   className="rounded-lg"
                 />
+              </div>
+            )}
+            {cycle.recycled_from && (
+              <div className="mt-4 mb-4">
+                <MiniCycleCard cycle={originalCycle} />
               </div>
             )}
             <ActionButtons

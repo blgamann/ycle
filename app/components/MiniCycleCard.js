@@ -1,9 +1,18 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { UserAvatar } from "./UserAvatar";
 import { getRelativeTime } from "../utils/date";
 
 export function MiniCycleCard({ cycle, clickable = true }) {
+  if (!cycle) {
+    return (
+      <div className="border rounded-lg p-4 bg-white shadow-sm">
+        <p className="text-sm text-gray-500">삭제된 사이클입니다.</p>
+      </div>
+    );
+  }
+
   const username = cycle.users?.username || "알 수 없는 사용자";
 
   const content = (
@@ -18,9 +27,22 @@ export function MiniCycleCard({ cycle, clickable = true }) {
             </p>
           </div>
         </div>
-        <p className="text-sm text-gray-700 line-clamp-3 whitespace-pre-wrap break-words">
+        <p className="text-sm text-gray-700 line-clamp-3 whitespace-pre-wrap break-words mb-2">
           {cycle.reflection}
         </p>
+        {cycle.img_url && (
+          <div className="mt-2">
+            <Image
+              src={cycle.img_url}
+              alt="Cycle image"
+              width={100}
+              height={100}
+              layout="responsive"
+              objectFit="cover"
+              className="rounded-lg"
+            />
+          </div>
+        )}
       </div>
     </div>
   );
