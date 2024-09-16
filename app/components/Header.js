@@ -1,14 +1,18 @@
+"use client";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "../contexts/AuthContext";
 
-export function Header({ isLoggedIn, onLogout }) {
+export function Header() {
+  const { isLoggedIn, handleLogout } = useAuth();
+
   return (
     <header>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         <nav className="flex justify-between items-center h-20">
           <Logo />
-          {isLoggedIn && <UserMenu onLogout={onLogout} />}
+          {isLoggedIn && <UserMenu onLogout={handleLogout} />}
         </nav>
       </div>
     </header>

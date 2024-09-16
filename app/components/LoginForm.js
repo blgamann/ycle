@@ -1,56 +1,45 @@
+"use client";
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { useAuth } from "../contexts/AuthContext";
 
-export function LoginForm({ onLogin }) {
+export function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const { handleLogin } = useAuth();
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onLogin(username, password);
+    await handleLogin(username, password);
   };
 
   return (
-    <div className="flex items-center justify-center">
-      <div className="w-full max-w-md px-4">
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">
-              로그인
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">사용자 이름</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="사용자 이름을 입력하세요"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">비밀번호</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="비밀번호를 입력하세요"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <Button type="submit" className="w-full">
-                로그인
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-gray-700">Username:</label>
+        <input
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          required
+          className="w-full p-2 border border-gray-300 rounded"
+        />
       </div>
-    </div>
+      <div>
+        <label className="block text-gray-700">Password:</label>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className="w-full p-2 border border-gray-300 rounded"
+        />
+      </div>
+      <button
+        type="submit"
+        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+      >
+        로그인
+      </button>
+    </form>
   );
 }
