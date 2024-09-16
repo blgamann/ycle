@@ -58,11 +58,14 @@ export function useCycles({ isLoggedIn, user, username }) {
           .range(from, to);
 
         if (username) {
+          // Decode the username
+          const decodedUsername = decodeURIComponent(username);
+
           // First, get the user_id for the given username
           const { data: userData, error: userError } = await supabase
             .from("users")
             .select("id")
-            .eq("username", username)
+            .eq("username", decodedUsername)
             .single();
 
           if (userError) throw userError;

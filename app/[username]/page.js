@@ -13,7 +13,8 @@ import { supabase } from "../lib/supabase";
 export default function UserPage() {
   const params = useParams();
   const router = useRouter();
-  const username = params.username;
+  const encodedUsername = params.username;
+  const username = decodeURIComponent(encodedUsername);
 
   const { isLoggedIn, user } = useAuth();
   const [pageUser, setPageUser] = useState(null);
