@@ -10,7 +10,7 @@ export function useCycles({ isLoggedIn, user, username }) {
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   const pageRef = useRef(0);
-  const isFirstLoad = useRef(true);
+  const isFetchingRef = useRef(false);
 
   const { ref, inView } = useInView({
     threshold: 0,
@@ -21,13 +21,19 @@ export function useCycles({ isLoggedIn, user, username }) {
       resetCycles();
       fetchCycles(true);
     }
-  }, [isLoggedIn, username]);
+  }, [isLoggedIn, username]); // Include username here
 
   useEffect(() => {
-    if (initialLoadComplete && isLoggedIn && inView && hasMore && !isLoading) {
+    if (
+      initialLoadComplete &&
+      isLoggedIn &&
+      inView &&
+      hasMore &&
+      !isFetchingRef.current
+    ) {
       fetchCycles();
     }
-  }, [inView, initialLoadComplete, isLoggedIn, hasMore, isLoading]);
+  }, [inView, initialLoadComplete, isLoggedIn, hasMore]);
 
   const resetCycles = () => {
     setCycles([]);
@@ -38,6 +44,8 @@ export function useCycles({ isLoggedIn, user, username }) {
 
   const fetchCycles = useCallback(
     async (resetPage = false) => {
+      if (isFetchingRef.current) return; // Prevent overlapping calls
+      isFetchingRef.current = true;
       setIsLoading(true);
 
       const pageSize = 10;
@@ -93,9 +101,10 @@ export function useCycles({ isLoggedIn, user, username }) {
           setInitialLoadComplete(true);
         }
       } catch (error) {
-        console.error("사이클 가져오기 오류:", error);
-        alert("사이클을 가져오는 중 오류가 발생했습니다.");
+        console.error("Error fetching cycles:", error);
+        alert("An error occurred while fetching cycles.");
       } finally {
+        isFetchingRef.current = false;
         setIsLoading(false);
       }
     },
