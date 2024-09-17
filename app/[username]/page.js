@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useCycles } from "../hooks/useCycles";
 import { useAuth } from "../contexts/AuthContext";
 import { CycleList } from "../components/CycleList";
@@ -19,10 +19,11 @@ export default function UserPage() {
   const { isLoggedIn, user } = useAuth();
   const [pageUser, setPageUser] = useState(null);
   const [userNotFound, setUserNotFound] = useState(false);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   const {
     cycles,
-    isLoading,
+    isLoading: isLoadingCycles,
     hasMore,
     ref,
     handleCycleSubmit,
@@ -36,27 +37,35 @@ export default function UserPage() {
     username,
   });
 
-  useEffect(() => {
-    async function fetchPageUser() {
+  const fetchPageUser = useCallback(async () => {
+    setIsLoadingUser(true);
+    try {
       const { data, error } = await supabase
         .from("users")
         .select("*")
         .eq("username", username)
         .single();
 
-      if (error) {
+      if (error || !data) {
         setUserNotFound(true);
-        console.error("Error fetching user:", error);
+        console.error("사용자 정보 가져오기 오류:", error);
       } else {
         setUserNotFound(false);
         setPageUser(data);
       }
+    } catch (error) {
+      setUserNotFound(true);
+      console.error("사용자 정보 가져오기 오류:", error);
+    } finally {
+      setIsLoadingUser(false);
     }
-
-    fetchPageUser();
   }, [username]);
 
-  if (isLoading) return <div>로딩 중...</div>;
+  useEffect(() => {
+    fetchPageUser();
+  }, [fetchPageUser]);
+
+  if (isLoadingUser) return <div>로딩 중...</div>;
 
   if (userNotFound) {
     return (
@@ -66,7 +75,7 @@ export default function UserPage() {
           className="mb-4 flex items-center text-blue-500 hover:text-blue-700"
         >
           <ArrowLeftIcon className="h-5 w-5 mr-2" />
-          Back
+          뒤로가기
         </button>
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">사용자를 찾을 수 없습니다</h1>
@@ -103,7 +112,7 @@ export default function UserPage() {
       {hasMore && initialLoadComplete && (
         <div ref={ref} style={{ height: "20px" }}></div>
       )}
-      {isLoading && <p>더 많은 사이클을 불러오는 중...</p>}
+      {isLoadingCycles && <p>더 많은 사이클을 불러오는 중...</p>}
     </div>
   );
 }
