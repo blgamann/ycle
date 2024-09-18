@@ -15,6 +15,8 @@ export function truncateUrl(url, maxLength = 30) {
 }
 
 export function linkifyText(text) {
+  if (!text) return null;
+
   const lines = text.split("\n");
   return lines.map((line, lineIndex) => {
     const words = line.split(/(\s+)/);

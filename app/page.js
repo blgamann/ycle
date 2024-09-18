@@ -1,11 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { RecordDialog } from "./components/RecordDialog";
+import { RecordInput } from "./components/RecordInput";
 import { EventDialog } from "./components/EventDialog";
 import { LoginForm } from "./components/LoginForm";
 import { UserFilter } from "./components/UserFilter";
 import { CycleList } from "./components/CycleList";
-import { UserCard } from "./components/UserCard";
 import { useAuth } from "./contexts/AuthContext";
 import { useUsers } from "./hooks/useUsers";
 import { useCycles } from "./hooks/useCycles";
@@ -49,14 +48,10 @@ export default function Home() {
               setSelectedUser={setSelectedUser}
             />
 
-            {selectedUser !== "전체" && (
-              <UserCard user={users.find((u) => u.username === selectedUser)} />
-            )}
-
             {(selectedUser === "전체" || selectedUser === user.username) && (
               <div className="flex items-center justify-between mb-4">
-                <RecordDialog user={user} onSubmit={handleCycleSubmit} />
-                <EventDialog user={user} onSubmit={handleEventSubmit} />
+                <RecordInput user={user} onSubmit={handleCycleSubmit} />
+                {/* <EventDialog user={user} onSubmit={handleEventSubmit} /> */}
               </div>
             )}
 

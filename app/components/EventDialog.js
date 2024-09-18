@@ -18,17 +18,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
+import { FiCalendar } from "react-icons/fi";
 
-const FormGroup = ({ label, htmlFor, error, children }) => (
-  <div className="space-y-2">
+const FormGroup = ({ label, htmlFor, error, children, className }) => (
+  <div className={`space-y-2 ${className}`}>
     {label && <Label htmlFor={htmlFor}>{label}</Label>}
     {children}
     {error && <p className="text-red-500 text-sm">{error}</p>}
   </div>
 );
 
-const TimeInput = ({ id, label, value, onChange, error }) => (
-  <FormGroup label={label} htmlFor={id} error={error}>
+const TimeInput = ({ id, label, value, onChange, error, className }) => (
+  <FormGroup label={label} htmlFor={id} error={error} className={className}>
     <Input
       id={id}
       type="time"
@@ -68,7 +69,7 @@ const EventForm = ({ formState, handleChange, handleSubmit, errors, user }) => (
 
     <FormGroup
       label="미디엄 선택"
-      htmlFor="cycleMedium"
+      htmlFor="newCycleMedium"
       error={errors.newCycleMedium}
     >
       <Select
@@ -89,7 +90,7 @@ const EventForm = ({ formState, handleChange, handleSubmit, errors, user }) => (
       </Select>
     </FormGroup>
 
-    <FormGroup label="일자" htmlFor="eventDate" error={errors.newCycleDate}>
+    <FormGroup label="일자" htmlFor="newCycleDate" error={errors.newCycleDate}>
       <div className="flex justify-center">
         <Calendar
           mode="single"
@@ -101,42 +102,38 @@ const EventForm = ({ formState, handleChange, handleSubmit, errors, user }) => (
       </div>
     </FormGroup>
 
-    <FormGroup label="" error={errors.time}>
-      <div className="flex flex-col sm:flex-row sm:space-x-4">
-        <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <TimeInput
-            id="startTime"
-            label="시작 시간"
-            value={formState.startTime}
-            onChange={(e) => handleChange("startTime", e.target.value)}
-            error={errors.startTime}
-            className="w-full aspect-square"
-          />
-          <TimeInput
-            id="endTime"
-            label="종료 시간"
-            value={formState.endTime}
-            onChange={(e) => handleChange("endTime", e.target.value)}
-            error={errors.endTime}
-            className="w-full aspect-square"
-          />
-        </div>
-      </div>
-    </FormGroup>
+    <div className="flex flex-col sm:flex-row sm:space-x-4">
+      <TimeInput
+        id="startTime"
+        label="시작 시간"
+        value={formState.startTime}
+        onChange={(e) => handleChange("startTime", e.target.value)}
+        error={errors.startTime}
+        className="w-full"
+      />
+      <TimeInput
+        id="endTime"
+        label="종료 시간"
+        value={formState.endTime}
+        onChange={(e) => handleChange("endTime", e.target.value)}
+        error={errors.endTime}
+        className="w-full"
+      />
+    </div>
 
     <FormGroup
       label="장소"
-      htmlFor="cycleLocation"
+      htmlFor="newCycleLocation"
       error={errors.newCycleLocation}
     >
       <Input
-        id="cycleLocation"
+        id="newCycleLocation"
         value={formState.newCycleLocation}
         onChange={(e) => handleChange("newCycleLocation", e.target.value)}
         placeholder="장소를 입력하세요"
         aria-invalid={!!errors.newCycleLocation}
         aria-describedby={
-          errors.newCycleLocation ? "cycleLocation-error" : undefined
+          errors.newCycleLocation ? "newCycleLocation-error" : undefined
         }
       />
     </FormGroup>
@@ -161,14 +158,22 @@ export function EventDialog({ user, onSubmit }) {
   });
   const [errors, setErrors] = useState({});
 
+  const resetForm = () => {
+    setFormState({
+      cycleDescription: "",
+      newCycleMedium: "",
+      newCycleDate: new Date(),
+      startTime: "09:00",
+      endTime: "17:00",
+      newCycleLocation: "",
+    });
+    setErrors({});
+  };
+
   const handleOpenChange = (open) => {
     setIsOpen(open);
     if (open) {
-      setFormState((prevState) => ({
-        ...prevState,
-        newCycleMedium: "",
-      }));
-      setErrors({});
+      resetForm();
     }
   };
 
@@ -185,13 +190,24 @@ export function EventDialog({ user, onSubmit }) {
     if (!formState.cycleDescription.trim()) {
       newErrors.cycleDescription = "설명을 입력하세요.";
     }
+    if (!formState.newCycleMedium.trim()) {
+      newErrors.newCycleMedium = "미디엄을 선택하세요.";
+    }
     if (!formState.newCycleDate) {
       newErrors.newCycleDate = "일자를 선택하세요.";
     }
-    if (!formState.startTime || !formState.endTime) {
-      newErrors.time = "시작 및 종료 시간을 입력하세요.";
-    } else if (formState.endTime <= formState.startTime) {
-      newErrors.time = "종료 시간은 시작 시간보다 늦어야 합니다.";
+    if (!formState.startTime) {
+      newErrors.startTime = "시작 시간을 입력하세요.";
+    }
+    if (!formState.endTime) {
+      newErrors.endTime = "종료 시간을 입력하세요.";
+    }
+    if (
+      formState.startTime &&
+      formState.endTime &&
+      formState.endTime <= formState.startTime
+    ) {
+      newErrors.endTime = "종료 시간은 시작 시간보다 늦어야 합니다.";
     }
     if (!formState.newCycleLocation.trim()) {
       newErrors.newCycleLocation = "장소를 입력하세요.";
@@ -219,41 +235,15 @@ export function EventDialog({ user, onSubmit }) {
     setIsOpen(false);
   };
 
-  const resetForm = () => {
-    setFormState({
-      cycleDescription: "",
-      newCycleMedium: "",
-      newCycleDate: new Date(),
-      startTime: "09:00",
-      endTime: "17:00",
-      newCycleLocation: "",
-    });
-    setErrors({});
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          className="ml-4 bg-primary text-white hover:bg-primary/90 rounded-full w-16 h-16 flex items-center justify-center"
-          aria-label="새 사이클 계획"
+        <button
+          type="button"
+          className="cursor-pointer flex items-center justify-center"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="w-10 h-10"
-          >
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          <span className="sr-only">새 사이클 계획</span>
-        </Button>
+          <FiCalendar className="w-5 h-5" />
+        </button>
       </DialogTrigger>
       <DialogContent className="w-full max-w-[95vw] sm:max-w-[450px] h-[90vh] sm:h-auto overflow-y-auto">
         <DialogHeader>

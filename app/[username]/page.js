@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { CycleList } from "../components/CycleList";
 import { UserCard } from "../components/UserCard";
 import { useParams, useRouter } from "next/navigation";
-import { RecordDialog } from "../components/RecordDialog";
+import { RecordInput } from "../components/RecordInput";
 import { EventDialog } from "../components/EventDialog";
 import { ArrowLeftIcon } from "@heroicons/react/24/solid";
 import { supabase } from "../lib/supabase";
@@ -97,7 +97,7 @@ export default function UserPage() {
       <UserCard user={pageUser} />
       {user && user.username === username && (
         <div className="flex items-center justify-between mt-4">
-          <RecordDialog user={user} onSubmit={handleCycleSubmit} />
+          <RecordInput user={user} onSubmit={handleCycleSubmit} />
           <EventDialog user={user} onSubmit={handleEventSubmit} />
         </div>
       )}

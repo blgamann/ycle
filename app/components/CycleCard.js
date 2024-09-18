@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { getRelativeTime } from "../utils/date";
+import { formatFullDate, getRelativeTime } from "../utils/date";
 import {
   Card,
   CardContent,
@@ -37,6 +37,7 @@ import { useComments } from "../hooks/useComments";
 import { useOriginalCycle } from "../hooks/useOriginalCycle";
 import { useLikes } from "../hooks/useLikes";
 import Link from "next/link";
+import { EventContent } from "./EventContent";
 
 // Main CycleCard Component
 export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
@@ -207,46 +208,41 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
         />
       </CardHeader>
       <CardContent>
-        {cycle.type === "event" ? (
-          <EventContent cycle={cycle} />
+        {cycle.event_description && <EventContent cycle={cycle} />}
+        {isEditing ? (
+          <ReflectionEdit
+            editedReflection={editedReflection}
+            setEditedReflection={setEditedReflection}
+            handleEditSubmit={handleEditSubmit}
+            setIsEditing={setIsEditing}
+          />
         ) : (
-          <>
-            {isEditing ? (
-              <ReflectionEdit
-                editedReflection={editedReflection}
-                setEditedReflection={setEditedReflection}
-                handleEditSubmit={handleEditSubmit}
-                setIsEditing={setIsEditing}
-              />
-            ) : (
-              <ReflectionDisplay reflection={cycle.reflection} />
-            )}
-            {cycle.img_url && (
-              <div className="mt-4 mb-4">
-                <Image
-                  src={cycle.img_url}
-                  alt="Cycle image"
-                  width={500}
-                  height={300}
-                  layout="responsive"
-                  objectFit="cover"
-                  className="rounded-lg"
-                />
-              </div>
-            )}
-            {cycle.recycled_from && (
-              <div className="mt-4 mb-4">
-                <MiniCycleCard cycle={originalCycle} />
-              </div>
-            )}
-            <ActionButtons
-              likeCount={likeCount}
-              isLiked={isLiked}
-              onToggleLike={toggleLike}
-              onOpenRecycleDialog={() => setIsRecycleDialogOpen(true)}
-            />
-          </>
+          <ReflectionDisplay reflection={cycle.reflection} />
         )}
+        {cycle.img_url && (
+          <div className="mt-4 mb-4">
+            <Image
+              src={cycle.img_url}
+              alt="Cycle image"
+              width={500}
+              height={300}
+              layout="responsive"
+              objectFit="cover"
+              className="rounded-lg"
+            />
+          </div>
+        )}
+        {cycle.recycled_from && (
+          <div className="mt-4 mb-4">
+            <MiniCycleCard cycle={originalCycle} />
+          </div>
+        )}
+        <ActionButtons
+          likeCount={likeCount}
+          isLiked={isLiked}
+          onToggleLike={toggleLike}
+          onOpenRecycleDialog={() => setIsRecycleDialogOpen(true)}
+        />
         <CommentsSection
           comments={comments}
           currentUser={currentUser}
@@ -343,31 +339,6 @@ const CycleHeader = ({
   </div>
 );
 
-// EventContent Component
-const EventContent = ({ cycle }) => (
-  <div className="bg-gray-100 rounded-lg p-4 mt-4">
-    <h4 className="text-xl font-bold mb-2">{cycle.event_description}</h4>
-    <div className="space-y-2 text-sm text-gray-600">
-      <div className="flex items-center mt-4">
-        <CalendarIcon className="w-5 h-5 mr-2" />
-        <span>{getRelativeTime(cycle.event_date)}</span>
-      </div>
-      <div className="flex items-center">
-        <ClockIcon className="w-5 h-5 mr-2" />
-        <span>
-          {cycle.event_start_time} - {cycle.event_end_time}
-        </span>
-      </div>
-      {cycle.event_location && (
-        <div className="flex items-center">
-          <MapPinIcon className="w-5 h-5 mr-2" />
-          <span>{cycle.event_location}</span>
-        </div>
-      )}
-    </div>
-  </div>
-);
-
 // ReflectionEdit Component
 const ReflectionEdit = ({
   editedReflection,
@@ -407,7 +378,7 @@ const ActionButtons = ({
   onToggleLike,
   onOpenRecycleDialog,
 }) => (
-  <div className="mt-4 flex space-x-2">
+  <div className="mt-12 flex space-x-2">
     <Button
       variant="outline"
       size="sm"
@@ -445,7 +416,7 @@ const CommentsSection = ({
   handleCommentDelete,
   adjustTextareaHeight,
 }) => (
-  <div className="mt-6 space-y-4">
+  <div className="mt-4 space-y-4">
     {comments.map((comment) => (
       <Comment
         key={comment.id}

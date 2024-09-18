@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { UserAvatar } from "./UserAvatar";
 import { getRelativeTime } from "../utils/date";
+import { EventContent } from "./EventContent";
 
 export function MiniCycleCard({ cycle, clickable = true }) {
   if (!cycle) {
@@ -27,6 +28,7 @@ export function MiniCycleCard({ cycle, clickable = true }) {
             </p>
           </div>
         </div>
+        {cycle.event_description && <EventContent cycle={cycle} />}
         <p className="text-sm text-gray-700 line-clamp-3 whitespace-pre-wrap break-words mb-2">
           {cycle.reflection}
         </p>

@@ -117,7 +117,7 @@ export function useCycles({ isLoggedIn, user, username }) {
   }, []);
 
   // submit cycle
-  const handleCycleSubmit = async ({ reflection, medium, imgUrl }) => {
+  const handleCycleSubmit = async ({ reflection, medium, imgUrl, event }) => {
     try {
       const { data, error } = await supabase
         .from("cycles")
@@ -127,6 +127,13 @@ export function useCycles({ isLoggedIn, user, username }) {
           medium,
           reflection,
           img_url: imgUrl,
+          ...(event && {
+            event_description: event.event_description,
+            event_date: event.event_date,
+            event_start_time: event.event_start_time,
+            event_end_time: event.event_end_time,
+            event_location: event.event_location,
+          }),
         })
         .select("*, users:user_id (id, username, medium)");
 
