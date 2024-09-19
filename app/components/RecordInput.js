@@ -17,7 +17,7 @@ import { formatFullDate } from "../utils/date";
 
 export function RecordInput({ user, onSubmit }) {
   const [reflection, setReflection] = useState("");
-  const [selectedMedium, setSelectedMedium] = useState("없음");
+  const [selectedMedium, setSelectedMedium] = useState(""); // Changed to empty string
   const [image, setImage] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [eventData, setEventData] = useState(null);
@@ -36,7 +36,7 @@ export function RecordInput({ user, onSubmit }) {
 
   const resetForm = () => {
     setReflection("");
-    setSelectedMedium("없음");
+    setSelectedMedium("");
     setImage(null);
     setEventData(null);
   };
@@ -51,6 +51,9 @@ export function RecordInput({ user, onSubmit }) {
       if (image) {
         imageUrl = await uploadImage(image);
       }
+
+      // 디버깅을 위해 로그 추가
+      console.log("RecordInput: handleSubmit 호출");
 
       await onSubmit({
         reflection,
@@ -68,6 +71,8 @@ export function RecordInput({ user, onSubmit }) {
   };
 
   const handleEventSubmit = (event) => {
+    // 변경된 부분
+    console.log("RecordInput: handleEventSubmit 호출");
     setEventData(event);
   };
 
@@ -91,43 +96,38 @@ export function RecordInput({ user, onSubmit }) {
       <button
         onClick={onRemove}
         className="absolute top-2 right-2 p-1 bg-white rounded-full shadow-md hover:bg-gray-100"
+        type="button"
       >
         <FiX className="w-4 h-4 text-gray-600" />
       </button>
-      <h4 className="text-xl font-bold mb-2">
-        {event.event_description || "No description"}
-      </h4>
-      <div className="space-y-2 text-sm text-gray-600">
-        <div className="flex items-center mt-4">
-          <CalendarIcon className="w-5 h-5 mr-2" />
-          <span>
-            {event.event_date ? formatFullDate(event.event_date) : "No date"}
-          </span>
-        </div>
-        <div className="flex items-center">
-          <ClockIcon className="w-5 h-5 mr-2" />
-          <span>
-            {event.event_start_time || "N/A"} - {event.event_end_time || "N/A"}
-          </span>
-        </div>
-        {event.event_location && (
-          <div className="flex items-center">
-            <MapPinIcon className="w-5 h-5 mr-2" />
-            <span>{event.event_location}</span>
-          </div>
-        )}
+      <h4 className="text-xl font-bold mb-2">{event.event_description}</h4>
+      <div className="flex items-center mb-1">
+        <CalendarIcon className="w-5 h-5 mr-2" />
+        <span>{formatFullDate(event.event_date)}</span>
       </div>
+      <div className="flex items-center mb-1">
+        <ClockIcon className="w-5 h-5 mr-2" />
+        <span>
+          {event.event_start_time || "N/A"} - {event.event_end_time || "N/A"}
+        </span>
+      </div>
+      {event.event_location && (
+        <div className="flex items-center">
+          <MapPinIcon className="w-5 h-5 mr-2" />
+          <span>{event.event_location}</span>
+        </div>
+      )}
     </div>
   );
 
   return (
     <div className="flex-grow bg-white rounded-lg shadow p-4">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {user.why && (
+        {/* {user.why && (
           <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
             <p className="text-sm text-gray-700">{user.why}</p>
           </div>
-        )}
+        )} */}
 
         <Textarea
           ref={textareaRef}
@@ -150,7 +150,7 @@ export function RecordInput({ user, onSubmit }) {
               className="max-w-full h-auto rounded-md max-h-40"
             />
             <button
-              type="button"
+              type="button" // button 타입으로 변경
               onClick={handleImageRemove}
               className="absolute top-1 right-1 p-1 bg-white rounded-full shadow-md hover:bg-gray-100"
             >
@@ -164,9 +164,9 @@ export function RecordInput({ user, onSubmit }) {
             <Select
               onValueChange={setSelectedMedium}
               value={selectedMedium}
-              className="w-40 text-base"
+              className="text-base"
             >
-              <SelectTrigger className="text-base">
+              <SelectTrigger className="text-base w-48">
                 <SelectValue placeholder="미디엄 선택 (선택사항)" />
               </SelectTrigger>
               <SelectContent>
@@ -183,7 +183,7 @@ export function RecordInput({ user, onSubmit }) {
               <FiImage className="w-5 h-5" />
             </label>
 
-            <EventDialog user={user} onSubmit={handleEventSubmit} />
+            <EventDialog user={user} onEventSubmit={handleEventSubmit} />
 
             <Input
               id="image-upload"
