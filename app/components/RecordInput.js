@@ -130,7 +130,7 @@ export function RecordInput({ user, onSubmit }) {
         )} */}
 
         <Textarea
-          ref={{textareaRef}}
+          ref={textareaRef}
           placeholder={`오늘은 어떤 배움이 있으셨나요? (${user.why})`}
           value={reflection}
           onChange={(e) => setReflection(e.target.value)}
