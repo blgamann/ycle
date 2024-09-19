@@ -69,7 +69,7 @@ export default function UserPage() {
 
   const handleAddMedium = async (user, newMedium) => {
     await addMedium(user, newMedium);
-    const updatedUser = await updateUser();
+    const updatedUser = await updateUser(user);
     setPageUser(updatedUser);
   };
 

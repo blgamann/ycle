@@ -18,12 +18,12 @@ export function AuthProvider({ children }) {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
+      await updateUser(parsedUser);
       setIsLoggedIn(true);
-      setUser(parsedUser);
     }
   }
 
-  async function updateUser() {
+  async function updateUser(user) {
     const { data, error } = await supabase
       .from("users")
       .select("*")
