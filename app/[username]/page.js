@@ -9,6 +9,7 @@ import { RecordInput } from "../components/RecordInput";
 import { EventDialog } from "../components/EventDialog";
 import { ArrowLeftIcon } from "@heroicons/react/24/solid";
 import { supabase } from "../lib/supabase";
+import { useUsers } from "../hooks/useUsers";
 
 export default function UserPage() {
   const params = useParams();
@@ -16,7 +17,7 @@ export default function UserPage() {
   const encodedUsername = params.username;
   const username = decodeURIComponent(encodedUsername);
 
-  const { isLoggedIn, user } = useAuth();
+  const { isLoggedIn, user, updateUser } = useAuth();
   const [pageUser, setPageUser] = useState(null);
   const [userNotFound, setUserNotFound] = useState(false);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
@@ -36,6 +37,7 @@ export default function UserPage() {
     user,
     username,
   });
+  const { addMedium } = useUsers();
 
   const fetchPageUser = useCallback(async () => {
     setIsLoadingUser(true);
@@ -64,6 +66,12 @@ export default function UserPage() {
   useEffect(() => {
     fetchPageUser();
   }, [fetchPageUser]);
+
+  const handleAddMedium = async (user, newMedium) => {
+    await addMedium(user, newMedium);
+    const updatedUser = await updateUser();
+    setPageUser(updatedUser);
+  };
 
   if (isLoadingUser) return <div>로딩 중...</div>;
 
@@ -94,7 +102,7 @@ export default function UserPage() {
         <ArrowLeftIcon className="h-5 w-5 mr-2" />
         Back
       </button>
-      <UserCard user={pageUser} />
+      <UserCard user={pageUser} onAddMedium={handleAddMedium} />
       {user && user.username === username && (
         <div className="flex items-center justify-between mt-4">
           <RecordInput user={user} onSubmit={handleCycleSubmit} />

@@ -1,5 +1,9 @@
 import { CalendarIcon, ClockIcon, MapPinIcon } from "lucide-react";
-import { formatFullDate } from "../utils/date";
+import { formatFullDate, formatTimeOfDay } from "../utils/date";
+
+const slice = (time) => {
+  return time.slice(0, 5);
+};
 
 export function EventContent({ cycle }) {
   return (
@@ -13,7 +17,7 @@ export function EventContent({ cycle }) {
         <div className="flex items-center">
           <ClockIcon className="w-5 h-5 mr-2" />
           <span>
-            {cycle.event_start_time} - {cycle.event_end_time}
+            {slice(cycle.event_start_time)} - {slice(cycle.event_end_time)}
           </span>
         </div>
         {cycle.event_location && (

@@ -28,6 +28,13 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { MiniCycleCard } from "./MiniCycleCard";
 import { UserAvatar } from "./UserAvatar";
 import { linkifyText } from "../utils/url";
@@ -38,6 +45,7 @@ import { useOriginalCycle } from "../hooks/useOriginalCycle";
 import { useLikes } from "../hooks/useLikes";
 import Link from "next/link";
 import { EventContent } from "./EventContent";
+import { useAuth } from "../contexts/AuthContext";
 
 // Main CycleCard Component
 export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
@@ -51,6 +59,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   const [editedCommentContent, setEditedCommentContent] = useState("");
   const [isRecycleDialogOpen, setIsRecycleDialogOpen] = useState(false);
   const [recycleContent, setRecycleContent] = useState("");
+  const [recycleMedium, setRecycleMedium] = useState("");
 
   const textareaRef = useRef(null);
   const editTextareaRef = useRef(null);
@@ -58,6 +67,8 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   const { comments, fetchComments } = useComments(cycle.id);
   const originalCycle = useOriginalCycle(cycle.recycled_from);
   const { likeCount, isLiked, toggleLike } = useLikes(cycle.id, currentUser.id);
+
+  const { user: loginUser } = useAuth();
 
   const user = cycle.users || {};
   const username = user.username || "알 수 없는 사용자";
@@ -181,6 +192,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
       user_id: currentUser.id,
       reflection: trimmed,
       recycled_from: cycle.id,
+      medium: recycleMedium,
       type: "cycle",
     });
 
@@ -190,6 +202,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
     } else {
       setIsRecycleDialogOpen(false);
       setRecycleContent("");
+      setRecycleMedium("");
       onRecycle?.();
     }
   };
@@ -267,10 +280,13 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
       </CardFooter>
       {cycle.type !== "event" && (
         <RecycleDialog
+          user={loginUser}
           isOpen={isRecycleDialogOpen}
           onClose={setIsRecycleDialogOpen}
           recycleContent={recycleContent}
           setRecycleContent={setRecycleContent}
+          recycleMedium={recycleMedium}
+          setRecycleMedium={setRecycleMedium}
           handleRecycle={handleRecycle}
           cycle={cycle}
         />
@@ -587,10 +603,13 @@ const CommentForm = ({
 
 // RecycleDialog Component
 const RecycleDialog = ({
+  user,
   isOpen,
   onClose,
   recycleContent,
   setRecycleContent,
+  recycleMedium,
+  setRecycleMedium,
   handleRecycle,
   cycle,
 }) => (
@@ -610,6 +629,21 @@ const RecycleDialog = ({
           onChange={(e) => setRecycleContent(e.target.value)}
           rows={4}
         />
+        <div className="mt-4">
+          <Select value={recycleMedium} onValueChange={setRecycleMedium}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="미디엄 선택" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="없음">없음</SelectItem>
+              {user.medium?.map((med, index) => (
+                <SelectItem key={index} value={med}>
+                  {med}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="mt-2">
           <MiniCycleCard cycle={cycle} clickable={false} />
         </div>

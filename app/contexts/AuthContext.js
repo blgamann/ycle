@@ -23,6 +23,23 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function updateUser() {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("username", user.username)
+      .single();
+
+    if (error) {
+      alert("사용자 정보 업데이트 오류: " + error.message);
+    }
+
+    setUser(data);
+    localStorage.setItem("user", JSON.stringify(data));
+
+    return data;
+  }
+
   async function handleLogin(username, password) {
     const { data, error } = await supabase
       .from("users")
@@ -58,6 +75,7 @@ export function AuthProvider({ children }) {
         user,
         handleLogin,
         handleLogout,
+        updateUser,
       }}
     >
       {children}
