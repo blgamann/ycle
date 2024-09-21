@@ -38,7 +38,7 @@ export function UserCard({ user: pageUser, onAddMedium }) {
                 )) || "설정되지 않음"}
               </div>
             </div>
-            {isLoggedIn && user.username === pageUser.username && (
+            {/* {isLoggedIn && user.username === pageUser.username && (
               <Button
                 onClick={() => setIsDialogOpen(true)}
                 variant="outline"
@@ -46,7 +46,7 @@ export function UserCard({ user: pageUser, onAddMedium }) {
               >
                 Medium 추가
               </Button>
-            )}
+            )} */}
           </div>
         </div>
       </CardContent>
