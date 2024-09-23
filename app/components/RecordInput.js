@@ -123,11 +123,9 @@ export function RecordInput({ user, onSubmit }) {
   return (
     <div className="flex-grow bg-white rounded-lg shadow p-4">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* {user.why && (
-          <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
-            <p className="text-sm text-gray-700">{user.why}</p>
-          </div>
-        )} */}
+        {eventData && (
+          <EventContent event={eventData} onRemove={handleRemoveEvent} />
+        )}
 
         <Textarea
           ref={textareaRef}
@@ -137,10 +135,6 @@ export function RecordInput({ user, onSubmit }) {
           className="w-full text-base resize-none overflow-hidden"
           rows={4}
         />
-
-        {eventData && (
-          <EventContent event={eventData} onRemove={handleRemoveEvent} />
-        )}
 
         {image && (
           <div className="mt-2 relative inline-block">
