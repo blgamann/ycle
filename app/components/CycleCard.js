@@ -61,6 +61,8 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   const [isRecycleDialogOpen, setIsRecycleDialogOpen] = useState(false);
   const [recycleContent, setRecycleContent] = useState("");
   const [recycleMedium, setRecycleMedium] = useState("");
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState("");
 
   const textareaRef = useRef(null);
   const editTextareaRef = useRef(null);
@@ -219,6 +221,11 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
     }
   };
 
+  const handleImageClick = (url) => {
+    setSelectedImageUrl(url);
+    setIsImageModalOpen(true);
+  };
+
   return (
     <Card className="mb-6 hover:shadow-lg transition-shadow duration-200">
       <CardHeader className="pb-3">
@@ -253,7 +260,8 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
               height={300}
               layout="responsive"
               objectFit="cover"
-              className="rounded-lg"
+              className="rounded-lg cursor-pointer"
+              onClick={() => handleImageClick(cycle.img_url)}
             />
           </div>
         )}
@@ -301,6 +309,12 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
           setRecycleMedium={setRecycleMedium}
           handleRecycle={handleRecycle}
           cycle={cycle}
+        />
+      )}
+      {isImageModalOpen && (
+        <ImageModal
+          imageUrl={selectedImageUrl}
+          onClose={() => setIsImageModalOpen(false)}
         />
       )}
     </Card>
@@ -642,6 +656,8 @@ const RecycleDialog = ({
     }
   };
 
+  if (!user) return null;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[525px]">
@@ -730,3 +746,21 @@ const RecycleDialog = ({
     </Dialog>
   );
 };
+
+// New ImageModal Component
+const ImageModal = ({ imageUrl, onClose }) => (
+  <Dialog open={true} onOpenChange={onClose}>
+    <DialogContent className="max-w-3xl">
+      <div className="flex justify-center">
+        <Image
+          src={imageUrl}
+          alt="Enlarged image"
+          width={800}
+          height={600}
+          objectFit="contain"
+          className="rounded-lg"
+        />
+      </div>
+    </DialogContent>
+  </Dialog>
+);
