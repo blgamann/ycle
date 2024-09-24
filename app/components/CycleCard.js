@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { deleteImage, supabase } from "../lib/supabase";
+import { deleteImage, supabase, uploadImage } from "../lib/supabase";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   MoreVertical,
@@ -46,6 +46,7 @@ import { useLikes } from "../hooks/useLikes";
 import Link from "next/link";
 import { EventContent } from "./EventContent";
 import { useAuth } from "../contexts/AuthContext";
+import { FiX } from "react-icons/fi";
 
 // Main CycleCard Component
 export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
@@ -183,17 +184,28 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
     }
   };
 
-  const handleRecycle = async (e) => {
+  const handleRecycle = async (e, selectedImage) => {
     e.preventDefault();
-    const trimmed = recycleContent.trim();
-    if (!trimmed) return;
+    if (!recycleContent.trim()) return;
+
+    let imageUrl = null;
+    try {
+      if (selectedImage) {
+        imageUrl = await uploadImage(selectedImage);
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("이미지 업로드 중 오류가 발생했습니다.");
+      return;
+    }
 
     const { error } = await supabase.from("cycles").insert({
       user_id: currentUser.id,
-      reflection: trimmed,
+      reflection: recycleContent,
       recycled_from: cycle.id,
       medium: recycleMedium,
       type: "cycle",
+      img_url: imageUrl,
     });
 
     if (error) {
@@ -612,55 +624,109 @@ const RecycleDialog = ({
   setRecycleMedium,
   handleRecycle,
   cycle,
-}) => (
-  <Dialog open={isOpen} onOpenChange={onClose}>
-    <DialogContent className="sm:max-w-[525px]">
-      <DialogHeader>
-        <DialogTitle className="text-2xl font-semibold">리사이클</DialogTitle>
-        <DialogDescription className="text-base">
-          이 사이클에서 어떤 배움이 발견되었나요?
-        </DialogDescription>
-      </DialogHeader>
-      <form onSubmit={handleRecycle} className="mt-2">
-        <Textarea
-          className="mt-4 text-base"
-          placeholder="해당 사이클에서 발견한 배움을 작성해주세요..."
-          value={recycleContent}
-          onChange={(e) => setRecycleContent(e.target.value)}
-          rows={4}
-        />
-        <div className="mt-4">
-          <Select value={recycleMedium} onValueChange={setRecycleMedium}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="미디엄 선택" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="없음">없음</SelectItem>
-              {user.medium?.map((med, index) => (
-                <SelectItem key={index} value={med}>
-                  {med}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="mt-2">
-          <MiniCycleCard cycle={cycle} clickable={false} />
-        </div>
-        <div className="mt-6 flex justify-end space-x-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onClose(false)}
-            className="text-base"
-          >
-            취소
-          </Button>
-          <Button type="submit" className="text-base">
-            리사이클
-          </Button>
-        </div>
-      </form>
-    </DialogContent>
-  </Dialog>
-);
+}) => {
+  const [selectedImage, setSelectedImage] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+    }
+  };
+
+  const handleImageRemove = () => {
+    setSelectedImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[525px]">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-semibold">리사이클</DialogTitle>
+          <DialogDescription className="text-base">
+            이 사이클에서 어떤 배움이 발견되었나요?
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          onSubmit={(e) => handleRecycle(e, selectedImage)}
+          className="mt-2"
+        >
+          <Textarea
+            className="mt-4 text-base"
+            placeholder="해당 사이클에서 발견한 배움을 작성해주세요..."
+            value={recycleContent}
+            onChange={(e) => setRecycleContent(e.target.value)}
+            rows={4}
+          />
+          <div className="mt-4">
+            <Select value={recycleMedium} onValueChange={setRecycleMedium}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="미디엄 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="없음">없음</SelectItem>
+                {user.medium?.map((med, index) => (
+                  <SelectItem key={index} value={med}>
+                    {med}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="mt-4">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full"
+            >
+              이미지 선택
+            </Button>
+            {selectedImage && (
+              <div className="mt-2 relative inline-block">
+                <img
+                  src={URL.createObjectURL(selectedImage)}
+                  alt="Selected"
+                  className="max-w-full h-auto rounded-md max-h-40"
+                />
+                <button
+                  type="button"
+                  onClick={handleImageRemove}
+                  className="absolute top-1 right-1 p-1 bg-white rounded-full shadow-md hover:bg-gray-100"
+                >
+                  <FiX className="w-4 h-4 text-gray-600" />
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="mt-2">
+            <MiniCycleCard cycle={cycle} clickable={false} />
+          </div>
+          <div className="mt-6 flex justify-end space-x-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onClose(false)}
+              className="text-base"
+            >
+              취소
+            </Button>
+            <Button type="submit" className="text-base">
+              리사이클
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
