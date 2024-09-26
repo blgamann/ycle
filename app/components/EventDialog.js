@@ -211,7 +211,7 @@ export function EventDialog({ user, onEventSubmit }) {
       </DialogTrigger>
       <DialogContent className="w-full max-w-[95vw] sm:max-w-[450px] h-[90vh] sm:h-auto overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl sm:text-2xl">사이클 일정</DialogTitle>
+          <DialogTitle className="text-xl sm:text-2xl">사이클</DialogTitle>
         </DialogHeader>
         <EventForm
           formState={formState}
