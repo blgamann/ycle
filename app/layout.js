@@ -9,15 +9,18 @@ export const metadata = {
   openGraph: {
     title: "Ycle - Record Your Cycles",
     description: "Connect and share your cycles with others on Ycle",
-    url: "https://why-mvn.vercel.app",
+    url: "https://ycle.kr",
     siteName: "Ycle",
     images: [
       {
-        url: "https://why-mvn.vercel.app/logo.png",
+        url: "https://ycle.kr/logo.png",
         width: 1200,
         height: 630,
       },
     ],
+    icons: {
+      icon: "/logo.png",
+    },
     locale: "ko_KR",
     type: "website",
   },
@@ -26,6 +29,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/logo.png" />
+      </head>
       <body className="min-h-screen bg-gray-50">
         <AuthProvider>
           <div className="flex flex-col min-h-screen w-full max-w-3xl mx-auto">
