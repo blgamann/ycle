@@ -50,5 +50,24 @@ export function useUsers(isLoggedIn) {
     }
   };
 
-  return { users, addMedium, error };
+  const handleUpdateWhy = async (user, newWhy) => {
+    try {
+      if (!user) throw new Error("User not found");
+
+      const { data, error } = await supabase
+        .from("users")
+        .update({ why: newWhy })
+        .eq("id", user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      setError(error.message);
+      throw error;
+    }
+  };
+
+  return { users, addMedium, error, handleUpdateWhy };
 }

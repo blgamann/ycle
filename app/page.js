@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { RecordInput } from "./components/RecordInput";
-import { EventDialog } from "./components/EventDialog";
 import { LoginForm } from "./components/LoginForm";
 import { UserFilter } from "./components/UserFilter";
 import { CycleList } from "./components/CycleList";
@@ -17,15 +16,14 @@ export default function Home() {
     setIsClient(true);
   }, []);
 
-  const { isLoggedIn, user } = useAuth();
-  const { users } = useUsers(isLoggedIn);
+  const { isLoggedIn, user, updateUser } = useAuth();
+  const { users, handleUpdateWhy } = useUsers(isLoggedIn);
   const {
     cycles,
     isLoading,
     hasMore,
     ref,
     handleCycleSubmit,
-    handleEventSubmit,
     handleCycleDelete,
     handleRecycle,
     initialLoadComplete,
@@ -34,6 +32,15 @@ export default function Home() {
   if (!isClient) {
     return null;
   }
+
+  const onUpdateWhy = async (user, newWhy) => {
+    try {
+      const updatedUser = await handleUpdateWhy(user, newWhy);
+      await updateUser(updatedUser);
+    } catch (error) {
+      console.error("Error updating Why:", error);
+    }
+  };
 
   return (
     <div className="flex-grow flex justify-center">
@@ -50,7 +57,11 @@ export default function Home() {
 
             {(selectedUser === "전체" || selectedUser === user.username) && (
               <div className="flex items-center justify-between mb-4">
-                <RecordInput user={user} onSubmit={handleCycleSubmit} />
+                <RecordInput
+                  user={user}
+                  onSubmit={handleCycleSubmit}
+                  onUpdateWhy={onUpdateWhy}
+                />
                 {/* <EventDialog user={user} onSubmit={handleEventSubmit} /> */}
               </div>
             )}

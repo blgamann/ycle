@@ -14,8 +14,9 @@ import { FiImage, FiX } from "react-icons/fi";
 import { EventDialog } from "./EventDialog";
 import { CalendarIcon, ClockIcon, MapPinIcon } from "lucide-react";
 import { formatFullDate } from "../utils/date";
+import { WhyInput } from "./WhyInput";
 
-export function RecordInput({ user, onSubmit }) {
+export function RecordInput({ user, onSubmit, onUpdateWhy }) {
   const [reflection, setReflection] = useState("");
   const [selectedMedium, setSelectedMedium] = useState(""); // Changed to empty string
   const [image, setImage] = useState(null);
@@ -52,9 +53,6 @@ export function RecordInput({ user, onSubmit }) {
         imageUrl = await uploadImage(image);
       }
 
-      // 디버깅을 위해 로그 추가
-      console.log("RecordInput: handleSubmit 호출");
-
       await onSubmit({
         reflection,
         medium: selectedMedium === "없음" ? null : selectedMedium,
@@ -89,6 +87,15 @@ export function RecordInput({ user, onSubmit }) {
 
   const handleRemoveEvent = () => {
     setEventData(null);
+  };
+
+  const handleWhySubmit = async (newWhy) => {
+    try {
+      await onUpdateWhy(user, newWhy); // Assume onUpdateWhy is a prop function to update the Why
+    } catch (error) {
+      console.error("Error updating Why:", error);
+      // Optionally, display an error message to the user
+    }
   };
 
   const EventContent = ({ event, onRemove }) => (
@@ -127,9 +134,11 @@ export function RecordInput({ user, onSubmit }) {
           <EventContent event={eventData} onRemove={handleRemoveEvent} />
         )}
 
+        <WhyInput user={user} handleWhySubmit={handleWhySubmit} />
+
         <Textarea
           ref={textareaRef}
-          placeholder={`오늘은 어떤 배움이 있으셨나요? (${user.why})`}
+          placeholder={`오늘은 어떤 배움이 있으셨나요?`}
           value={reflection}
           onChange={(e) => setReflection(e.target.value)}
           className="w-full text-base resize-none overflow-hidden"
