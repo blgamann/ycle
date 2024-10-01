@@ -24,7 +24,7 @@ export default function Leaderboard() {
   async function fetchLeaderboard() {
     // 모든 사용자 가져오기
     const { data: users, error: usersError } = await supabase
-      .from("users")
+      .from("User")
       .select("id, username");
 
     if (usersError) {
@@ -34,10 +34,10 @@ export default function Leaderboard() {
 
     // medium이 있는 cycle 가져오기
     const { data: cycles, error: cyclesError } = await supabase
-      .from("cycles")
+      .from("Cycle")
       .select(
         `
-        user_id,
+        userId,
         medium
       `
       )
@@ -56,11 +56,11 @@ export default function Leaderboard() {
     }, {});
 
     cycles.forEach((cycle) => {
-      if (userMediumCounts[cycle.user_id]) {
-        if (!userMediumCounts[cycle.user_id].mediums[cycle.medium]) {
-          userMediumCounts[cycle.user_id].mediums[cycle.medium] = 0;
+      if (userMediumCounts[cycle.userId]) {
+        if (!userMediumCounts[cycle.userId].mediums[cycle.medium]) {
+          userMediumCounts[cycle.userId].mediums[cycle.medium] = 0;
         }
-        userMediumCounts[cycle.user_id].mediums[cycle.medium]++;
+        userMediumCounts[cycle.userId].mediums[cycle.medium]++;
       }
     });
 

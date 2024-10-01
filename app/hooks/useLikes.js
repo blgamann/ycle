@@ -16,9 +16,9 @@ export function useLikes(cycleId, userId) {
 
   async function fetchLikeCount() {
     const { count, error } = await supabase
-      .from("likes")
+      .from("Like")
       .select("*", { count: "exact" })
-      .eq("cycle_id", cycleId);
+      .eq("cycleId", cycleId);
 
     if (error) {
       console.error("Error fetching like count:", error);
@@ -34,10 +34,10 @@ export function useLikes(cycleId, userId) {
     }
 
     const { data, error } = await supabase
-      .from("likes")
+      .from("Like")
       .select("*")
-      .eq("cycle_id", cycleId)
-      .eq("user_id", userId);
+      .eq("cycleId", cycleId)
+      .eq("userId", userId);
 
     if (error) {
       console.error("Error checking if liked:", error);
@@ -49,10 +49,10 @@ export function useLikes(cycleId, userId) {
   async function toggleLike() {
     if (isLiked) {
       const { error } = await supabase
-        .from("likes")
+        .from("Like")
         .delete()
-        .eq("cycle_id", cycleId)
-        .eq("user_id", userId);
+        .eq("cycleId", cycleId)
+        .eq("userId", userId);
 
       if (error) {
         console.error("Error unliking cycle:", error);
@@ -62,8 +62,8 @@ export function useLikes(cycleId, userId) {
       }
     } else {
       const { error } = await supabase
-        .from("likes")
-        .insert({ cycle_id: cycleId, user_id: userId });
+        .from("Like")
+        .insert({ cycleId: cycleId, userId: userId });
 
       if (error) {
         console.error("Error liking cycle:", error);

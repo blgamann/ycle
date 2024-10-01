@@ -14,11 +14,9 @@ export function useUsers(isLoggedIn) {
   const fetchUsers = async () => {
     try {
       const { data, error } = await supabase
-        .from("users")
-        .select("username, medium, why");
-
+        .from("User")
+        .select("username, mediums, why");
       if (error) throw error;
-
       setUsers(data || []);
     } catch (error) {
       setError(error.message);
@@ -28,10 +26,10 @@ export function useUsers(isLoggedIn) {
   const addMedium = async (user, newMedium) => {
     try {
       if (!user) throw new Error("User not found");
-      const updatedMediums = [...(user.medium || []), newMedium];
+      const updatedMediums = [...(user.mediums || []), newMedium];
 
       const { data, error } = await supabase
-        .from("users")
+        .from("User")
         .update({ medium: updatedMediums })
         .eq("id", user.id)
         .select()
@@ -55,7 +53,7 @@ export function useUsers(isLoggedIn) {
       if (!user) throw new Error("User not found");
 
       const { data, error } = await supabase
-        .from("users")
+        .from("User")
         .update({ why: newWhy })
         .eq("id", user.id)
         .select()

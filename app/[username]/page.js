@@ -43,7 +43,7 @@ export default function UserPage() {
     setIsLoadingUser(true);
     try {
       const { data, error } = await supabase
-        .from("users")
+        .from("User")
         .select("*")
         .eq("username", username)
         .single();

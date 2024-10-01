@@ -8,8 +8,8 @@ export const useOriginalCycle = (recycledFrom) => {
     if (!recycledFrom) return;
 
     const { data, error } = await supabase
-      .from("cycles")
-      .select("*, users:user_id (*)")
+      .from("Cycle")
+      .select("*, users:userId (*)")
       .eq("id", recycledFrom)
       .single();
 

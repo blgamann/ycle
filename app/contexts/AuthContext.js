@@ -25,7 +25,7 @@ export function AuthProvider({ children }) {
 
   async function updateUser(user) {
     const { data, error } = await supabase
-      .from("users")
+      .from("User")
       .select("*")
       .eq("username", user.username)
       .single();
@@ -42,7 +42,7 @@ export function AuthProvider({ children }) {
 
   async function handleLogin(username, password) {
     const { data, error } = await supabase
-      .from("users")
+      .from("User")
       .select("*")
       .eq("username", username)
       .single();

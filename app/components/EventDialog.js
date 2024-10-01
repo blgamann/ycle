@@ -188,11 +188,11 @@ export function EventDialog({ user, onEventSubmit }) {
     console.log("EventDialog: handleSubmitForm 호출");
 
     onEventSubmit({
-      event_description: formState.cycleDescription,
-      event_date: formState.newCycleDate,
-      event_start_time: formState.startTime,
-      event_end_time: formState.endTime,
-      event_location: formState.newCycleLocation,
+      eventDescription: formState.cycleDescription,
+      eventDate: formState.newCycleDate,
+      eventStartTime: formState.startTime,
+      eventEndTime: formState.endTime,
+      eventLocation: formState.newCycleLocation,
     });
 
     resetForm();

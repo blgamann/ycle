@@ -57,31 +57,27 @@ export function useCycles({ isLoggedIn, user, username }) {
 
       try {
         let query = supabase
-          .from("cycles")
-          .select(
-            `
-            *,
-            users:user_id (id, username, medium)
-          `
-          )
-          .order("created_at", { ascending: false })
+          .from("Cycle")
+          .select("*, user:User!Cycle_userId_fkey(*)")
+          .order("createdAt", { ascending: false })
           .range(from, to);
 
         if (username) {
           const decodedUsername = decodeURIComponent(username);
 
           const { data: userData, error: userError } = await supabase
-            .from("users")
+            .from("User")
             .select("id")
             .eq("username", decodedUsername)
             .single();
 
           if (userError) throw userError;
 
-          query = query.eq("user_id", userData.id);
+          query = query.eq("userId", userData.id);
         }
 
         const { data, error } = await query;
+        console.log(data);
 
         if (error) throw error;
 
@@ -119,26 +115,34 @@ export function useCycles({ isLoggedIn, user, username }) {
   // submit cycle
   const handleCycleSubmit = async ({ reflection, medium, imgUrl, event }) => {
     try {
+      console.log(
+        "handleCycleSubmit",
+        reflection,
+        medium,
+        imgUrl,
+        event,
+        user.id
+      );
+
       const { data, error } = await supabase
-        .from("cycles")
+        .from("Cycle")
         .insert({
-          user_id: user.id,
-          type: "cycle",
+          userId: user.id,
           medium,
           reflection,
-          img_url: imgUrl,
+          imageUrl: imgUrl,
+          updatedAt: new Date().toISOString(),
           ...(event && {
-            event_description: event.event_description,
-            event_date: event.event_date,
-            event_start_time: event.event_start_time,
-            event_end_time: event.event_end_time,
-            event_location: event.event_location,
+            eventDescription: event.eventDescription,
+            eventDate: event.eventDate,
+            eventStartTime: event.eventStartTime,
+            eventEndTime: event.eventEndTime,
+            eventLocation: event.eventLocation,
           }),
         })
-        .select("*, users:user_id (id, username, medium)");
+        .select("*");
 
       if (error) throw error;
-
       addCycle(data[0]);
     } catch (error) {
       console.error("사이클 작성 오류:", error);
@@ -157,13 +161,13 @@ export function useCycles({ isLoggedIn, user, username }) {
   const handleEventSubmit = async (eventData) => {
     try {
       const { data, error } = await supabase
-        .from("cycles")
+        .from("Cycle")
         .insert({
-          user_id: user.id,
+          userId: user.id,
           type: "event",
           ...eventData,
         })
-        .select("*, users:user_id (id, username, medium)");
+        .select("*, users:userId (id, username, medium)");
 
       if (error) throw error;
 

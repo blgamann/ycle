@@ -73,7 +73,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
 
   const { user: loginUser } = useAuth();
 
-  const user = cycle.users || {};
+  const user = cycle.user || {};
   const username = user.username || "알 수 없는 사용자";
 
   // Adjust textarea height dynamically
@@ -101,9 +101,9 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
 
     setIsCommenting(true);
 
-    const { error } = await supabase.from("comments").insert({
-      user_id: currentUser.id,
-      cycle_id: cycle.id,
+    const { error } = await supabase.from("Comment").insert({
+      userId: currentUser.id,
+      cycleId: cycle.id,
       content: trimmed,
     });
 
@@ -122,7 +122,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
     if (!trimmed) return;
 
     const { error } = await supabase
-      .from("cycles")
+      .from("Cycle")
       .update({ reflection: trimmed })
       .eq("id", cycle.id);
 
@@ -138,7 +138,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   const handleDelete = async () => {
     if (!window.confirm("정말로 이 사이클을 삭제하시겠습니까?")) return;
 
-    const { error } = await supabase.from("cycles").delete().eq("id", cycle.id);
+    const { error } = await supabase.from("Cycle").delete().eq("id", cycle.id);
 
     if (error) {
       console.error("Error deleting cycle:", error);
@@ -157,7 +157,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
     if (!trimmed) return;
 
     const { error } = await supabase
-      .from("comments")
+      .from("Comment")
       .update({ content: trimmed })
       .eq("id", commentId);
 
@@ -174,7 +174,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
     if (!window.confirm("정말로 이 댓글을 삭제하시겠습니까?")) return;
 
     const { error } = await supabase
-      .from("comments")
+      .from("Comment")
       .delete()
       .eq("id", commentId);
 
@@ -201,8 +201,8 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
       return;
     }
 
-    const { error } = await supabase.from("cycles").insert({
-      user_id: currentUser.id,
+    const { error } = await supabase.from("Cycle").insert({
+      userId: currentUser.id,
       reflection: recycleContent,
       recycled_from: cycle.id,
       medium: recycleMedium,
@@ -232,15 +232,15 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
         <CycleHeader
           username={username}
           cycleId={cycle.id}
-          createdAt={cycle.created_at}
+          createdAt={cycle.createdAt}
           medium={cycle.medium}
-          isOwner={currentUser.id === cycle.user_id}
+          isOwner={currentUser.id === cycle.userId}
           onEdit={() => setIsEditing(true)}
           onDelete={handleDelete}
         />
       </CardHeader>
       <CardContent>
-        {cycle.event_description && <EventContent cycle={cycle} />}
+        {cycle.eventDescription && <EventContent cycle={cycle} />}
         {isEditing ? (
           <ReflectionEdit
             editedReflection={editedReflection}
@@ -499,7 +499,7 @@ const Comment = ({
             {comment.users.username}
           </span>
           <span className="text-sm text-gray-500">
-            {getRelativeTime(comment.created_at)}
+            {getRelativeTime(comment.createdAt)}
           </span>
         </div>
         {isEditing ? (
@@ -517,7 +517,7 @@ const Comment = ({
           </p>
         )}
       </div>
-      {currentUser.id === comment.user_id && (
+      {currentUser.id === comment.userId && (
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <Button
@@ -685,7 +685,7 @@ const RecycleDialog = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="없음">없음</SelectItem>
-                {user.medium?.map((med, index) => (
+                {user.mediums?.map((med, index) => (
                   <SelectItem key={index} value={med}>
                     {med}
                   </SelectItem>

@@ -1,6 +1,7 @@
 // hooks/useAuth.js
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import db from "../lib/db";
 
 export function useAuth() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -21,7 +22,7 @@ export function useAuth() {
 
   async function handleLogin(username, password) {
     const { data, error } = await supabase
-      .from("users")
+      .from("User")
       .select("*")
       .eq("username", username)
       .single();

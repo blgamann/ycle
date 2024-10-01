@@ -107,21 +107,21 @@ export function RecordInput({ user, onSubmit, onUpdateWhy }) {
       >
         <FiX className="w-4 h-4 text-gray-600" />
       </button>
-      <h4 className="text-xl font-bold mb-2">{event.event_description}</h4>
+      <h4 className="text-xl font-bold mb-2">{event.eventDescription}</h4>
       <div className="flex items-center mb-1">
         <CalendarIcon className="w-5 h-5 mr-2" />
-        <span>{formatFullDate(event.event_date)}</span>
+        <span>{formatFullDate(event.eventDate)}</span>
       </div>
       <div className="flex items-center mb-1">
         <ClockIcon className="w-5 h-5 mr-2" />
         <span>
-          {event.event_start_time || "N/A"} - {event.event_end_time || "N/A"}
+          {event.eventStartTime || "N/A"} - {event.eventEndTime || "N/A"}
         </span>
       </div>
-      {event.event_location && (
+      {event.eventLocation && (
         <div className="flex items-center">
           <MapPinIcon className="w-5 h-5 mr-2" />
-          <span>{event.event_location}</span>
+          <span>{event.eventLocation}</span>
         </div>
       )}
     </div>
@@ -174,7 +174,7 @@ export function RecordInput({ user, onSubmit, onUpdateWhy }) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="없음">없음</SelectItem>
-                {user.medium?.map((med, index) => (
+                {user.mediums?.map((med, index) => (
                   <SelectItem key={index} value={med}>
                     {med}
                   </SelectItem>

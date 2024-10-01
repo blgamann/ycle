@@ -28,7 +28,7 @@ export function UserCard({ user: pageUser, onAddMedium }) {
             <div className="flex items-center mb-2">
               <span className="font-semibold mr-2 text-gray-700">Medium:</span>
               <div className="flex flex-wrap gap-2">
-                {pageUser.medium?.map((med, index) => (
+                {pageUser.mediums?.map((med, index) => (
                   <span
                     key={index}
                     className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium"

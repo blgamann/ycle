@@ -8,15 +8,15 @@ export const useComments = (cycleId) => {
     if (!cycleId) return;
 
     const { data, error } = await supabase
-      .from("comments")
+      .from("Comment")
       .select(
         `
         *,
-        users:user_id (username)
+        users:userId (username)
       `
       )
-      .eq("cycle_id", cycleId)
-      .order("created_at", { ascending: true });
+      .eq("cycleId", cycleId)
+      .order("createdAt", { ascending: true });
 
     if (error) {
       console.error("Error fetching comments:", error);
