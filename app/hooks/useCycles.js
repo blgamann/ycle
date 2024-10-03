@@ -125,8 +125,6 @@ export function useCycles({ isLoggedIn, user, username }) {
         user.id
       );
 
-      
-
       const { data, error } = await supabase
         .from("Cycle")
         .insert({
@@ -134,7 +132,7 @@ export function useCycles({ isLoggedIn, user, username }) {
           medium,
           reflection,
           imageUrl,
-          updatedAt: new Date(),
+          // updatedAt: new Date(),
           ...(event && {
             eventDescription: event.eventDescription,
             eventDate: event.eventDate,

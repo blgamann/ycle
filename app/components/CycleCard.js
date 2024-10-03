@@ -496,7 +496,7 @@ const Comment = ({
       <div className="flex flex-col w-full">
         <div className="flex items-center space-x-2">
           <span className="font-semibold text-base">
-            {comment.users.username}
+            {comment.user.username}
           </span>
           <span className="text-sm text-gray-500">
             {getRelativeTime(comment.createdAt)}
