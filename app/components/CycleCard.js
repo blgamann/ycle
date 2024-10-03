@@ -68,7 +68,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   const editTextareaRef = useRef(null);
 
   const { comments, fetchComments } = useComments(cycle.id);
-  const originalCycle = useOriginalCycle(cycle.recycled_from);
+  const originalCycle = useOriginalCycle(cycle.recycledFromId);
   const { likeCount, isLiked, toggleLike } = useLikes(cycle.id, currentUser.id);
 
   const { user: loginUser } = useAuth();
@@ -202,12 +202,12 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
     }
 
     const { error } = await supabase.from("Cycle").insert({
-      userId: currentUser.id,
       reflection: recycleContent,
-      recycled_from: cycle.id,
       medium: recycleMedium,
-      type: "cycle",
       imageUrl: imageUrl,
+      userId: currentUser.id,
+      recycledFromId: cycle.id,
+      recycledByUserId: currentUser.id,
     });
 
     if (error) {
@@ -265,7 +265,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
             />
           </div>
         )}
-        {cycle.recycled_from && (
+        {cycle.recycledFromId && (
           <div className="mt-4 mb-4">
             <MiniCycleCard cycle={originalCycle} />
           </div>
