@@ -106,7 +106,7 @@ export default function UserPage() {
       {user && user.username === username && (
         <div className="flex items-center justify-between mt-4">
           <RecordInput user={user} onSubmit={handleCycleSubmit} />
-          <EventDialog user={user} onSubmit={handleEventSubmit} />
+          {/* <EventDialog user={user} onSubmit={handleEventSubmit} /> */}
         </div>
       )}
       <div className="mt-4">

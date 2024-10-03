@@ -82,6 +82,10 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   const user = cycle.user || {};
   const username = user.username || "알 수 없는 사용자";
 
+  const isOwner = currentUser.id === cycle.userId;
+  const isAlreadyUpcycled = cycle;
+  console.log("cycle", isAlreadyUpcycled);
+
   // Adjust textarea height dynamically
   const adjustTextareaHeight = useCallback((ref) => {
     if (ref.current) {
@@ -313,6 +317,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
           </div>
         )}
         <ActionButtons
+          isOwner={isOwner}
           likeCount={likeCount}
           isLiked={isLiked}
           onToggleLike={toggleLike}
@@ -471,6 +476,7 @@ const ReflectionDisplay = ({ reflection }) => (
 
 // Updated ActionButtons Component
 const ActionButtons = ({
+  isOwner,
   likeCount,
   isLiked,
   onToggleLike,
@@ -491,24 +497,27 @@ const ActionButtons = ({
       <Heart className={`h-5 w-5 ${isLiked ? "fill-current" : ""}`} />
       <span>{likeCount} 좋아요</span>
     </Button>
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={onOpenRecycleDialog}
-      className="flex items-center space-x-2 flex-1 justify-center text-green-600 border-green-300 hover:bg-green-50 hover:text-green-700 hover:border-green-400 transition-colors"
-    >
-      <Repeat className="h-5 w-5" />
-      <span>리사이클</span>
-    </Button>
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={onOpenUpcycleDialog}
-      className="flex items-center space-x-2 flex-1 justify-center text-orange-600 border-orange-300 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-400 transition-colors"
-    >
-      <CircleFadingArrowUp className="h-5 w-5" />
-      <span>업사이클</span>
-    </Button>
+    {!isOwner ? (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onOpenRecycleDialog}
+        className="flex items-center space-x-2 flex-1 justify-center text-green-600 border-green-300 hover:bg-green-50 hover:text-green-700 hover:border-green-400 transition-colors"
+      >
+        <Repeat className="h-5 w-5" />
+        <span>리사이클</span>
+      </Button>
+    ) : (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onOpenUpcycleDialog}
+        className="flex items-center space-x-2 flex-1 justify-center text-orange-600 border-orange-300 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-400 transition-colors"
+      >
+        <CircleFadingArrowUp className="h-5 w-5" />
+        <span>업사이클</span>
+      </Button>
+    )}
   </div>
 );
 
