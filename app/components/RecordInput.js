@@ -51,12 +51,13 @@ export function RecordInput({ user, onSubmit, onUpdateWhy }) {
       let imageUrl = null;
       if (image) {
         imageUrl = await uploadImage(image);
+        console.log("uploaded imageUrl", imageUrl);
       }
 
       await onSubmit({
         reflection,
         medium: selectedMedium === "없음" ? null : selectedMedium,
-        imgUrl: imageUrl,
+        imageUrl: imageUrl,
         event: eventData,
       });
       resetForm();
@@ -129,12 +130,12 @@ export function RecordInput({ user, onSubmit, onUpdateWhy }) {
 
   return (
     <div className="flex-grow bg-white rounded-lg shadow p-4">
+      <WhyInput user={user} handleWhySubmit={handleWhySubmit} />
+
       <form onSubmit={handleSubmit} className="space-y-4">
         {eventData && (
           <EventContent event={eventData} onRemove={handleRemoveEvent} />
         )}
-
-        <WhyInput user={user} handleWhySubmit={handleWhySubmit} />
 
         <Textarea
           ref={textareaRef}

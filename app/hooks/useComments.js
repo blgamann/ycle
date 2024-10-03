@@ -12,7 +12,7 @@ export const useComments = (cycleId) => {
       .select(
         `
         *,
-        users:userId (username)
+        user:userId (username)
       `
       )
       .eq("cycleId", cycleId)

@@ -16,7 +16,7 @@ export default function CyclePage() {
     async function fetchCycle() {
       const { data, error } = await supabase
         .from("Cycle")
-        .select(`*, users:userId (id, username, medium)`)
+        .select(`*, user:userId (id, username, mediums)`)
         .eq("id", params.cycleId)
         .single();
 

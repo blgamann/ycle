@@ -14,7 +14,7 @@ export function MiniCycleCard({ cycle, clickable = true }) {
     );
   }
 
-  const username = cycle.users?.username || "알 수 없는 사용자";
+  const username = cycle.user?.username || "알 수 없는 사용자";
 
   const content = (
     <div className={clickable ? "cursor-pointer" : ""}>
@@ -32,10 +32,10 @@ export function MiniCycleCard({ cycle, clickable = true }) {
         <p className="text-sm text-gray-700 line-clamp-3 whitespace-pre-wrap break-words mb-2">
           {cycle.reflection}
         </p>
-        {cycle.img_url && (
+        {cycle.imageUrl && (
           <div className="mt-2">
             <Image
-              src={cycle.img_url}
+              src={cycle.imageUrl}
               alt="Cycle image"
               width={100}
               height={100}

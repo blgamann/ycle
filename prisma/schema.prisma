@@ -7,6 +7,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_DIRECT")
 }
 
 model User {
@@ -34,13 +35,15 @@ model Cycle {
   medium              String?
 
   imageUrl            String?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  // TODO: timezone
+  createdAt           DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime  @updatedAt @db.Timestamptz(6)
 
+  // TODO: refactor event to use DateTime
   eventDescription    String?
   eventDate           DateTime?
-  eventStartTime      DateTime?
-  eventEndTime        DateTime?
+  eventStartTime      String?
+  eventEndTime        String?
   eventLocation       String?
 
   // Ownership

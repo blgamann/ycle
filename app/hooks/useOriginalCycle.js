@@ -9,7 +9,7 @@ export const useOriginalCycle = (recycledFrom) => {
 
     const { data, error } = await supabase
       .from("Cycle")
-      .select("*, users:userId (*)")
+      .select("*, user:userId (*)")
       .eq("id", recycledFrom)
       .single();
 

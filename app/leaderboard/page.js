@@ -28,7 +28,7 @@ export default function Leaderboard() {
       .select("id, username");
 
     if (usersError) {
-      console.error("Error fetching users:", usersError);
+      console.error("Error fetching user:", usersError);
       return;
     }
 

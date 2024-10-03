@@ -109,20 +109,23 @@ export function useCycles({ isLoggedIn, user, username }) {
 
   // add new cycle
   const addCycle = useCallback((newCycle) => {
+    console.log("newCycle", newCycle);
     setCycles((prevCycles) => [newCycle, ...prevCycles]);
   }, []);
 
   // submit cycle
-  const handleCycleSubmit = async ({ reflection, medium, imgUrl, event }) => {
+  const handleCycleSubmit = async ({ reflection, medium, imageUrl, event }) => {
     try {
       console.log(
         "handleCycleSubmit",
         reflection,
         medium,
-        imgUrl,
+        imageUrl,
         event,
         user.id
       );
+
+      
 
       const { data, error } = await supabase
         .from("Cycle")
@@ -130,8 +133,8 @@ export function useCycles({ isLoggedIn, user, username }) {
           userId: user.id,
           medium,
           reflection,
-          imageUrl: imgUrl,
-          updatedAt: new Date().toISOString(),
+          imageUrl,
+          updatedAt: new Date(),
           ...(event && {
             eventDescription: event.eventDescription,
             eventDate: event.eventDate,
@@ -140,7 +143,7 @@ export function useCycles({ isLoggedIn, user, username }) {
             eventLocation: event.eventLocation,
           }),
         })
-        .select("*");
+        .select("*, user:userId (*)");
 
       if (error) throw error;
       addCycle(data[0]);
@@ -167,7 +170,7 @@ export function useCycles({ isLoggedIn, user, username }) {
           type: "event",
           ...eventData,
         })
-        .select("*, users:userId (id, username, medium)");
+        .select("*, user:userId (id, username, medium)");
 
       if (error) throw error;
 

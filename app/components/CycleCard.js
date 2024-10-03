@@ -144,8 +144,8 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
       console.error("Error deleting cycle:", error);
       alert("삭제 중 오류가 발생했습니다.");
     } else {
-      if (cycle.img_url) {
-        await deleteImage(cycle.img_url);
+      if (cycle.imageUrl) {
+        await deleteImage(cycle.imageUrl);
       }
 
       onDelete(cycle.id);
@@ -207,7 +207,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
       recycled_from: cycle.id,
       medium: recycleMedium,
       type: "cycle",
-      img_url: imageUrl,
+      imageUrl: imageUrl,
     });
 
     if (error) {
@@ -251,17 +251,17 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
         ) : (
           <ReflectionDisplay reflection={cycle.reflection} />
         )}
-        {cycle.img_url && (
+        {cycle.imageUrl && (
           <div className="mt-4 mb-4">
             <Image
-              src={cycle.img_url}
+              src={cycle.imageUrl}
               alt="Cycle image"
               width={500}
               height={300}
               layout="responsive"
               objectFit="cover"
               className="rounded-lg cursor-pointer"
-              onClick={() => handleImageClick(cycle.img_url)}
+              onClick={() => handleImageClick(cycle.imageUrl)}
             />
           </div>
         )}
