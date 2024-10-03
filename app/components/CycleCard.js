@@ -20,6 +20,7 @@ import {
   MapPin as MapPinIcon,
   Repeat,
   Heart,
+  CircleFadingArrowUp,
 } from "lucide-react";
 import {
   Dialog,
@@ -61,6 +62,9 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   const [isRecycleDialogOpen, setIsRecycleDialogOpen] = useState(false);
   const [recycleContent, setRecycleContent] = useState("");
   const [recycleMedium, setRecycleMedium] = useState("");
+  const [isUpcycleDialogOpen, setIsUpcycleDialogOpen] = useState(false);
+  const [upcycleContent, setUpcycleContent] = useState("");
+  const [upcycleMedium, setUpcycleMedium] = useState("");
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState("");
 
@@ -68,7 +72,9 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   const editTextareaRef = useRef(null);
 
   const { comments, fetchComments } = useComments(cycle.id);
-  const originalCycle = useOriginalCycle(cycle.recycledFromId);
+  const originalCycle = useOriginalCycle(
+    cycle.recycledFromId || cycle.upcycledFromId
+  );
   const { likeCount, isLiked, toggleLike } = useLikes(cycle.id, currentUser.id);
 
   const { user: loginUser } = useAuth();
@@ -87,6 +93,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   useEffect(() => {
     adjustTextareaHeight(textareaRef);
   }, [newComment, adjustTextareaHeight]);
+
   useEffect(() => {
     if (editTextareaRef.current) {
       adjustTextareaHeight(editTextareaRef);
@@ -221,6 +228,41 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
     }
   };
 
+  const handleUpcycle = async (e, selectedImage) => {
+    e.preventDefault();
+    if (!upcycleContent.trim()) return;
+
+    let imageUrl = null;
+    try {
+      if (selectedImage) {
+        imageUrl = await uploadImage(selectedImage);
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("이미지 업로드 중 오류가 발생했습니다.");
+      return;
+    }
+
+    const { error } = await supabase.from("Cycle").insert({
+      reflection: upcycleContent,
+      medium: upcycleMedium,
+      imageUrl: imageUrl,
+      userId: currentUser.id,
+      upcycledFromId: cycle.id,
+      upcycledByUserId: currentUser.id,
+    });
+
+    if (error) {
+      console.error("Error upcycling cycle:", error);
+      alert("업사이클 중 오류가 발생했습니다.");
+    } else {
+      setIsUpcycleDialogOpen(false);
+      setUpcycleContent("");
+      setUpcycleMedium("");
+      onRecycle?.();
+    }
+  };
+
   const handleImageClick = (url) => {
     setSelectedImageUrl(url);
     setIsImageModalOpen(true);
@@ -265,7 +307,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
             />
           </div>
         )}
-        {cycle.recycledFromId && (
+        {(cycle.recycledFromId || cycle.upcycledFromId) && (
           <div className="mt-4 mb-4">
             <MiniCycleCard cycle={originalCycle} />
           </div>
@@ -275,6 +317,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
           isLiked={isLiked}
           onToggleLike={toggleLike}
           onOpenRecycleDialog={() => setIsRecycleDialogOpen(true)}
+          onOpenUpcycleDialog={() => setIsUpcycleDialogOpen(true)}
         />
         <CommentsSection
           comments={comments}
@@ -299,17 +342,30 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
         />
       </CardFooter>
       {cycle.type !== "event" && (
-        <RecycleDialog
-          user={loginUser}
-          isOpen={isRecycleDialogOpen}
-          onClose={setIsRecycleDialogOpen}
-          recycleContent={recycleContent}
-          setRecycleContent={setRecycleContent}
-          recycleMedium={recycleMedium}
-          setRecycleMedium={setRecycleMedium}
-          handleRecycle={handleRecycle}
-          cycle={cycle}
-        />
+        <>
+          <RecycleDialog
+            user={loginUser}
+            isOpen={isRecycleDialogOpen}
+            onClose={setIsRecycleDialogOpen}
+            recycleContent={recycleContent}
+            setRecycleContent={setRecycleContent}
+            recycleMedium={recycleMedium}
+            setRecycleMedium={setRecycleMedium}
+            handleRecycle={handleRecycle}
+            cycle={cycle}
+          />
+          <UpcycleDialog
+            user={loginUser}
+            isOpen={isUpcycleDialogOpen}
+            onClose={setIsUpcycleDialogOpen}
+            upcycleContent={upcycleContent}
+            setUpcycleContent={setUpcycleContent}
+            upcycleMedium={upcycleMedium}
+            setUpcycleMedium={setUpcycleMedium}
+            handleUpcycle={handleUpcycle}
+            cycle={cycle}
+          />
+        </>
       )}
       {isImageModalOpen && (
         <ImageModal
@@ -413,12 +469,13 @@ const ReflectionDisplay = ({ reflection }) => (
   </div>
 );
 
-// New ActionButtons Component
+// Updated ActionButtons Component
 const ActionButtons = ({
   likeCount,
   isLiked,
   onToggleLike,
   onOpenRecycleDialog,
+  onOpenUpcycleDialog,
 }) => (
   <div className="mt-12 flex space-x-2">
     <Button
@@ -442,6 +499,15 @@ const ActionButtons = ({
     >
       <Repeat className="h-5 w-5" />
       <span>리사이클</span>
+    </Button>
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={onOpenUpcycleDialog}
+      className="flex items-center space-x-2 flex-1 justify-center text-orange-600 border-orange-300 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-400 transition-colors"
+    >
+      <CircleFadingArrowUp className="h-5 w-5" />
+      <span>업사이클</span>
     </Button>
   </div>
 );
@@ -747,7 +813,127 @@ const RecycleDialog = ({
   );
 };
 
-// New ImageModal Component
+// UpcycleDialog Component
+const UpcycleDialog = ({
+  user,
+  isOpen,
+  onClose,
+  upcycleContent,
+  setUpcycleContent,
+  upcycleMedium,
+  setUpcycleMedium,
+  handleUpcycle,
+  cycle,
+}) => {
+  const [selectedImage, setSelectedImage] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+    }
+  };
+
+  const handleImageRemove = () => {
+    setSelectedImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  if (!user) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[525px]">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-semibold">업사이클</DialogTitle>
+          <DialogDescription className="text-base">
+            어떤 새로운 배움이 있으셨나요?
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          onSubmit={(e) => handleUpcycle(e, selectedImage)}
+          className="mt-2"
+        >
+          <Textarea
+            className="mt-4 text-base"
+            placeholder="발견한 배움을 작성해주세요..."
+            value={upcycleContent}
+            onChange={(e) => setUpcycleContent(e.target.value)}
+            rows={4}
+          />
+          <div className="mt-4">
+            <Select value={upcycleMedium} onValueChange={setUpcycleMedium}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="미디엄 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="없음">없음</SelectItem>
+                {user.mediums?.map((med, index) => (
+                  <SelectItem key={index} value={med}>
+                    {med}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="mt-4">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full"
+            >
+              이미지 선택
+            </Button>
+            {selectedImage && (
+              <div className="mt-2 relative inline-block">
+                <img
+                  src={URL.createObjectURL(selectedImage)}
+                  alt="Selected"
+                  className="max-w-full h-auto rounded-md max-h-40"
+                />
+                <button
+                  type="button"
+                  onClick={handleImageRemove}
+                  className="absolute top-1 right-1 p-1 bg-white rounded-full shadow-md hover:bg-gray-100"
+                >
+                  <FiX className="w-4 h-4 text-gray-600" />
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="mt-2">
+            <MiniCycleCard cycle={cycle} clickable={false} />
+          </div>
+          <div className="mt-6 flex justify-end space-x-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onClose(false)}
+              className="text-base"
+            >
+              취소
+            </Button>
+            <Button type="submit" className="text-base">
+              업사이클
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// ImageModal Component
 const ImageModal = ({ imageUrl, onClose }) => (
   <Dialog open={true} onOpenChange={onClose}>
     <DialogContent className="max-w-3xl">
