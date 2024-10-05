@@ -735,7 +735,7 @@ const RecycleDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[525px] max-h-screen overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-semibold">리사이클</DialogTitle>
           <DialogDescription className="text-base">
@@ -855,7 +855,7 @@ const UpcycleDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[525px] max-h-screen overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-semibold">업사이클</DialogTitle>
           <DialogDescription className="text-base">
