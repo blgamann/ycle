@@ -15,9 +15,9 @@ export default function CyclePage() {
   useEffect(() => {
     async function fetchCycle() {
       const { data, error } = await supabase
-        .from("cycles")
-        .select(`*, users:user_id (id, username, medium)`)
-        .eq("id", params.cycle_id)
+        .from("Cycle")
+        .select(`*, user:userId (id, username, mediums)`)
+        .eq("id", params.cycleId)
         .single();
 
       if (error) {
@@ -38,7 +38,7 @@ export default function CyclePage() {
 
     fetchCycle();
     fetchCurrentUser();
-  }, [params.cycle_id]);
+  }, [params.cycleId]);
 
   if (cycleNotFound) {
     return (
@@ -52,7 +52,7 @@ export default function CyclePage() {
         </button>
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">사이클을 찾을 수 없습니다</h1>
-          <p>요청하신 사이클 "{params.cycle_id}"은(는) 존재하지 않습니다.</p>
+          <p>요청하신 사이클 "{params.cycleId}"은(는) 존재하지 않습니다.</p>
         </div>
       </div>
     );

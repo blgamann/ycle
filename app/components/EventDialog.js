@@ -188,11 +188,11 @@ export function EventDialog({ user, onEventSubmit }) {
     console.log("EventDialog: handleSubmitForm 호출");
 
     onEventSubmit({
-      event_description: formState.cycleDescription,
-      event_date: formState.newCycleDate,
-      event_start_time: formState.startTime,
-      event_end_time: formState.endTime,
-      event_location: formState.newCycleLocation,
+      eventDescription: formState.cycleDescription,
+      eventDate: formState.newCycleDate,
+      eventStartTime: formState.startTime,
+      eventEndTime: formState.endTime,
+      eventLocation: formState.newCycleLocation,
     });
 
     resetForm();
@@ -211,7 +211,7 @@ export function EventDialog({ user, onEventSubmit }) {
       </DialogTrigger>
       <DialogContent className="w-full max-w-[95vw] sm:max-w-[450px] h-[90vh] sm:h-auto overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl sm:text-2xl">사이클</DialogTitle>
+          <DialogTitle className="text-xl sm:text-2xl">일정</DialogTitle>
         </DialogHeader>
         <EventForm
           formState={formState}

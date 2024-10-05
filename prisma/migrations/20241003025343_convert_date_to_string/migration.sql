@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Cycle" ALTER COLUMN "eventStartTime" SET DATA TYPE TEXT,
+ALTER COLUMN "eventEndTime" SET DATA TYPE TEXT;
