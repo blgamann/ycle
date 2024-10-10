@@ -10,13 +10,18 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const router = useRouter();
 
+  console.log("1");
+
   useEffect(() => {
+    console.log("2");
     checkUser();
   }, []);
 
   async function checkUser() {
+    console.log("3");
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
+      console.log("4");
       const parsedUser = JSON.parse(storedUser);
       await updateUser(parsedUser);
       setIsLoggedIn(true);
