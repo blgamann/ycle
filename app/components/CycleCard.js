@@ -21,6 +21,7 @@ import {
   Repeat,
   Heart,
   CircleFadingArrowUp,
+  Share2,
 } from "lucide-react";
 import {
   Dialog,
@@ -317,6 +318,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
           </div>
         )}
         <ActionButtons
+          cycleId={cycle.id}
           isOwner={isOwner}
           likeCount={likeCount}
           isLiked={isLiked}
@@ -476,6 +478,7 @@ const ReflectionDisplay = ({ reflection }) => (
 
 // Updated ActionButtons Component
 const ActionButtons = ({
+  cycleId,
   isOwner,
   likeCount,
   isLiked,
@@ -518,6 +521,20 @@ const ActionButtons = ({
         <span>업사이클</span>
       </Button>
     )}
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => {
+        const cycleUrl = `${window.location.origin}/cycles/${cycleId}`;
+        navigator.clipboard.writeText(cycleUrl).then(() => {
+          alert("사이클 링크가 클립보드에 복사되었습니다.");
+        });
+      }}
+      className="flex items-center space-x-2 flex-1 justify-center text-blue-600 border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-400 transition-colors"
+    >
+      <Share2 className="h-5 w-5" />
+      <span>사이클 링크 복사</span>
+    </Button>
   </div>
 );
 
