@@ -21,6 +21,7 @@ import {
   Repeat,
   Heart,
   CircleFadingArrowUp,
+  Share2,
 } from "lucide-react";
 import {
   Dialog,
@@ -75,16 +76,18 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
   const originalCycle = useOriginalCycle(
     cycle.recycledFromId || cycle.upcycledFromId
   );
-  const { likeCount, isLiked, toggleLike } = useLikes(cycle.id, currentUser.id);
+
+  let userId = 0;
+  if (currentUser) {
+    userId = currentUser.id;
+  }
+  const { likeCount, isLiked, toggleLike } = useLikes(cycle.id, userId);
+  const isOwner = userId === cycle.userId;
 
   const { user: loginUser } = useAuth();
 
   const user = cycle.user || {};
   const username = user.username || "알 수 없는 사용자";
-
-  const isOwner = currentUser.id === cycle.userId;
-  const isAlreadyUpcycled = cycle;
-  console.log("cycle", isAlreadyUpcycled);
 
   // Adjust textarea height dynamically
   const adjustTextareaHeight = useCallback((ref) => {
@@ -113,7 +116,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
     setIsCommenting(true);
 
     const { error } = await supabase.from("Comment").insert({
-      userId: currentUser.id,
+      userId,
       cycleId: cycle.id,
       content: trimmed,
     });
@@ -216,9 +219,9 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
       reflection: recycleContent,
       medium: recycleMedium,
       imageUrl: imageUrl,
-      userId: currentUser.id,
+      userId,
       recycledFromId: cycle.id,
-      recycledByUserId: currentUser.id,
+      recycledByUserId: userId,
     });
 
     if (error) {
@@ -251,9 +254,9 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
       reflection: upcycleContent,
       medium: upcycleMedium,
       imageUrl: imageUrl,
-      userId: currentUser.id,
+      userId,
       upcycledFromId: cycle.id,
-      upcycledByUserId: currentUser.id,
+      upcycledByUserId: userId,
     });
 
     if (error) {
@@ -280,7 +283,7 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
           cycleId={cycle.id}
           createdAt={cycle.createdAt}
           medium={cycle.medium}
-          isOwner={currentUser.id === cycle.userId}
+          isOwner={isOwner}
           onEdit={() => setIsEditing(true)}
           onDelete={handleDelete}
         />
@@ -316,36 +319,43 @@ export function CycleCard({ cycle, currentUser, onDelete, onRecycle }) {
             <MiniCycleCard cycle={originalCycle} />
           </div>
         )}
-        <ActionButtons
-          isOwner={isOwner}
-          likeCount={likeCount}
-          isLiked={isLiked}
-          onToggleLike={toggleLike}
-          onOpenRecycleDialog={() => setIsRecycleDialogOpen(true)}
-          onOpenUpcycleDialog={() => setIsUpcycleDialogOpen(true)}
-        />
-        <CommentsSection
-          comments={comments}
-          currentUser={currentUser}
-          editingCommentId={editingCommentId}
-          setEditingCommentId={setEditingCommentId}
-          editedCommentContent={editedCommentContent}
-          setEditedCommentContent={setEditedCommentContent}
-          handleCommentEdit={handleCommentEdit}
-          handleCommentDelete={handleCommentDelete}
-          adjustTextareaHeight={adjustTextareaHeight}
-        />
+        {userId !== 0 && (
+          <>
+            <ActionButtons
+              cycleId={cycle.id}
+              isOwner={isOwner}
+              likeCount={likeCount}
+              isLiked={isLiked}
+              onToggleLike={toggleLike}
+              onOpenRecycleDialog={() => setIsRecycleDialogOpen(true)}
+              onOpenUpcycleDialog={() => setIsUpcycleDialogOpen(true)}
+            />
+            <CommentsSection
+              comments={comments}
+              currentUser={currentUser}
+              editingCommentId={editingCommentId}
+              setEditingCommentId={setEditingCommentId}
+              editedCommentContent={editedCommentContent}
+              setEditedCommentContent={setEditedCommentContent}
+              handleCommentEdit={handleCommentEdit}
+              handleCommentDelete={handleCommentDelete}
+              adjustTextareaHeight={adjustTextareaHeight}
+            />
+          </>
+        )}
       </CardContent>
-      <CardFooter>
-        <CommentForm
-          newComment={newComment}
-          setNewComment={setNewComment}
-          isCommenting={isCommenting}
-          handleCommentSubmit={handleCommentSubmit}
-          textareaRef={textareaRef}
-          adjustTextareaHeight={adjustTextareaHeight}
-        />
-      </CardFooter>
+      {userId !== 0 && (
+        <CardFooter>
+          <CommentForm
+            newComment={newComment}
+            setNewComment={setNewComment}
+            isCommenting={isCommenting}
+            handleCommentSubmit={handleCommentSubmit}
+            textareaRef={textareaRef}
+            adjustTextareaHeight={adjustTextareaHeight}
+          />
+        </CardFooter>
+      )}
       {cycle.type !== "event" && (
         <>
           <RecycleDialog
@@ -476,6 +486,7 @@ const ReflectionDisplay = ({ reflection }) => (
 
 // Updated ActionButtons Component
 const ActionButtons = ({
+  cycleId,
   isOwner,
   likeCount,
   isLiked,
@@ -518,6 +529,20 @@ const ActionButtons = ({
         <span>업사이클</span>
       </Button>
     )}
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => {
+        const cycleUrl = `${window.location.origin}/cycles/${cycleId}`;
+        navigator.clipboard.writeText(cycleUrl).then(() => {
+          alert("사이클 링크가 클립보드에 복사되었습니다.");
+        });
+      }}
+      className="flex items-center space-x-2 flex-1 justify-center text-blue-600 border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-400 transition-colors"
+    >
+      <Share2 className="h-5 w-5" />
+      <span>사이클 링크 복사</span>
+    </Button>
   </div>
 );
 

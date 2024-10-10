@@ -6,6 +6,8 @@ import { CycleCard } from "../../components/CycleCard";
 import { ArrowLeftIcon } from "@heroicons/react/24/solid";
 
 export default function CyclePage() {
+  console.log("CyclePage");
+
   const params = useParams();
   const router = useRouter();
   const [cycle, setCycle] = useState(null);
@@ -14,12 +16,14 @@ export default function CyclePage() {
 
   useEffect(() => {
     async function fetchCycle() {
+      console.log("1-1");
       const { data, error } = await supabase
         .from("Cycle")
         .select(`*, user:userId (id, username, mediums)`)
         .eq("id", params.cycleId)
         .single();
 
+      console.log("1-2");
       if (error) {
         setCycleNotFound(true);
         console.error("Error fetching cycle:", error);
@@ -30,6 +34,7 @@ export default function CyclePage() {
     }
 
     async function fetchCurrentUser() {
+      console.log("1-3");
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         setCurrentUser(JSON.parse(storedUser));
