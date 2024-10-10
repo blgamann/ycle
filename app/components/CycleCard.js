@@ -572,6 +572,7 @@ const CommentsSection = ({
           setEditedCommentContent(comment.content);
         }}
         onDelete={() => handleCommentDelete(comment.id)}
+        onCancel={() => setEditingCommentId(null)}
         handleCommentEdit={handleCommentEdit}
         adjustTextareaHeight={adjustTextareaHeight}
       />
@@ -588,6 +589,7 @@ const Comment = ({
   setEditedCommentContent,
   onEdit,
   onDelete,
+  onCancel,
   handleCommentEdit,
   adjustTextareaHeight,
 }) => (
@@ -609,7 +611,7 @@ const Comment = ({
             handleCommentEdit={handleCommentEdit}
             commentId={comment.id}
             adjustTextareaHeight={adjustTextareaHeight}
-            onCancel={() => setEditingCommentId(null)}
+            onCancel={onCancel}
           />
         ) : (
           <p className="text-base text-gray-700 mt-1">
