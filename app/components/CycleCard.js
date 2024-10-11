@@ -21,7 +21,7 @@ import {
   Repeat,
   Heart,
   CircleFadingArrowUp,
-  Share2,
+  LinkIcon,
 } from "lucide-react";
 import {
   Dialog,
@@ -540,8 +540,8 @@ const ActionButtons = ({
       }}
       className="flex items-center space-x-2 flex-1 justify-center text-blue-600 border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-400 transition-colors"
     >
-      <Share2 className="h-5 w-5" />
-      <span>사이클 링크 복사</span>
+      <LinkIcon className="h-5 w-5" />
+      <span>복사</span>
     </Button>
   </div>
 );
